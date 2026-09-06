@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<title>U13 Förderliga Live</title>
+<title>FCG Match Live</title>
 <style>
 :root{--green:#0b5e3c;--bg:#f4f6f7;--card:#fff;--text:#17201b;--muted:#69736e;--red:#c0392b;--line:#dce2df}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -28,11 +28,16 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </style>
 </head>
 <body>
-<header><h1>⚽ U13 Förderliga Live</h1><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live</h1><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
-<div class="hidden" aria-hidden="true">
-<button id="modeFoerder"></button><button id="modeNormal"></button>
-<div id="normalSettings"></div><select id="sectionsSelect"><option value="6">6</option></select><input id="durationInput" value="12"><select id="fieldsSelect"><option value="2">2</option></select>
+<div class="card">
+ <div class="section">Spielmodus</div>
+ <div class="modebox"><button id="modeFoerder" onclick="setMode('foerder')">Förderliga</button><button id="modeNormal" onclick="setMode('normal')">Normales Spiel</button></div>
+ <div id="normalSettings" class="hidden" style="margin-top:12px">
+   <div class="formgrid"><label class="small">Anzahl Abschnitte<select id="sectionsSelect"></select></label><label class="small">Minuten je Abschnitt<input id="durationInput" type="number" min="1" max="90" inputmode="numeric"></label></div>
+   <label class="small" style="display:block;margin-top:10px">Anzahl Felder<select id="fieldsSelect"><option value="1">1 Feld</option><option value="2">2 Felder</option></select></label>
+   <div class="small" style="margin-top:7px">Beim normalen Spiel zählt das klassische Torergebnis über alle Abschnitte.</div>
+ </div>
 </div>
 
 <div class="card">
@@ -45,7 +50,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </div>
 
 <div class="card compactcard">
- <button class="foldhead" type="button" onclick="toggleFold('roster')" aria-controls="rosterBody" id="rosterFoldBtn"><span class="foldtitle">Kader</span><span class="foldsummary" id="rosterSummary">Noch kein Kader</span><span class="foldarrow" id="rosterArrow">⌄</span></button>
+ <button class="foldhead" type="button" onclick="toggleFold('roster')" aria-controls="rosterBody" id="rosterFoldBtn" aria-expanded="false"><span class="foldtitle">Kader</span><span class="foldsummary" id="rosterSummary">Noch kein Kader</span><span class="foldarrow" id="rosterArrow">⌄</span></button>
  <div id="rosterBody" class="foldbody hidden">
   <div class="small">Spielernamen einmalig eingeben – ein Name pro Zeile. Der Kader bleibt für das aktuelle Spiel gespeichert.</div>
   <textarea id="rosterInput" placeholder="Lukas&#10;Emir&#10;Leon&#10;..."></textarea>
@@ -65,7 +70,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 <div class="card">
  <div class="section">Live-Ergebnis</div>
  <div class="grid" id="scoreGrid"></div>
- <div class="controls" style="margin-top:12px"><button id="finishBtn" class="secondary" onclick="finishRound()">✓ Abschnitt abschließen</button><button class="secondary" onclick="resetRound()">↺ Abschnitt zurücksetzen</button></div>
+ <div class="controls" style="margin-top:12px"><button id="finishBtn" class="secondary" onclick="finishRound()">Abschnitt 1 abschließen</button><button class="secondary" onclick="resetRound()">↺ Abschnitt zurücksetzen</button></div>
 </div>
 
 <div class="card">
@@ -95,15 +100,16 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 const DEFAULT={mode:'foerder',sections:6,duration:12,numFields:2,round:0,fields:[{own:0,opp:0},{own:0,opp:0}],history:[],opponent:'',matchDate:new Date().toISOString().slice(0,10),editing:null,roster:[],lineups:[Array(7).fill(''),Array(7).fill('')],goals:[]};
 let state=JSON.parse(JSON.stringify(DEFAULT));let pendingGoal=null;
 function clone(x){return JSON.parse(JSON.stringify(x))}
-function save(){localStorage.setItem('u13live_v6',JSON.stringify(state))}
-function load(){try{const x=JSON.parse(localStorage.getItem('u13live_v6'));if(x)state=Object.assign(clone(DEFAULT),x)}catch(e){} normalizeState()}
+function save(){localStorage.setItem('u13live_v7',JSON.stringify(state))}
+function load(){try{const x=JSON.parse(localStorage.getItem('u13live_v7'));if(x)state=Object.assign(clone(DEFAULT),x)}catch(e){} normalizeState()}
 function normalizeState(){
  if(!Array.isArray(state.roster))state.roster=[];if(!Array.isArray(state.goals))state.goals=[];if(!Array.isArray(state.history))state.history=[];
  if(!Array.isArray(state.lineups))state.lineups=[Array(7).fill(''),Array(7).fill('')];while(state.lineups.length<2)state.lineups.push(Array(7).fill(''));state.lineups=state.lineups.map(a=>Array.from({length:7},(_,i)=>a?.[i]||''));
- state.mode='foerder';state.sections=6;state.duration=12;state.numFields=2
+ if(state.mode!=='normal')state.mode='foerder';if(state.mode==='foerder'){state.sections=6;state.duration=12;state.numFields=2}else{state.sections=Math.min(12,Math.max(1,+state.sections||2));state.duration=Math.min(90,Math.max(1,+state.duration||12));state.numFields=state.numFields===2?2:1}
  state.round=Math.min(state.history.length,state.sections);if(!state.fields?.length)state.fields=[{own:0,opp:0},{own:0,opp:0}];while(state.fields.length<2)state.fields.push({own:0,opp:0});if(state.editing===undefined)state.editing=null;
 }
-function setMode(){return}
+function setMode(mode){if(state.history.length&&!confirm('Der Spielmodus kann nach bereits erfassten Abschnitten nur geändert werden, wenn die bisherigen Abschnitte gelöscht werden. Fortfahren?'))return;if(state.history.length){state.history=[];state.round=0;state.goals=[]}
+ state.mode=mode;if(mode==='foerder'){state.sections=6;state.duration=12;state.numFields=2}else{state.sections=2;state.duration=25;state.numFields=1}state.fields=[{own:0,opp:0},{own:0,opp:0}];state.editing=null;update()}
 function sectionStart(i){return i*state.duration}function sectionEnd(i){return (i+1)*state.duration}
 function outcome(f){return f.own>f.opp?'Sieg':f.own<f.opp?'Niederlage':'Unentschieden'}
 function activeFieldCount(){return state.mode==='foerder'?2:state.numFields}
@@ -119,7 +125,7 @@ function applyFolds(){
  for(let f=0;f<2;f++){const body=document.getElementById('fieldBody'+f),arrow=document.getElementById('fieldArrow'+f),btn=document.getElementById('fieldFoldBtn'+f);if(body){const key='field'+(f+1);body.classList.toggle('hidden',!uiFold[key]);arrow.textContent=uiFold[key]?'⌃':'⌄';btn.setAttribute('aria-expanded',String(uiFold[key]))}}
 }
 function lineupSummary(f){const a=state.lineups[f]||[];const count=a.filter(Boolean).length;const ts=a[0]||'TS offen';return `${count}/7 · ${esc(ts)}`}
-function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}"><span class="foldtitle">Feld ${f+1}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden" id="fieldBody${f}">`+Array.from({length:7},(_,i)=>`<label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label>`).join('')+`</div>`;grid.appendChild(div)}
+function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden" id="fieldBody${f}">`+Array.from({length:7},(_,i)=>`<label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label>`).join('')+`</div>`;grid.appendChild(div)}
  const used=new Set(state.lineups.slice(0,n).flat().filter(Boolean));document.getElementById('bench').innerHTML=state.roster.length?state.roster.filter(x=>!used.has(x)).map(x=>`<span class="pill">${esc(x)}</span>`).join('')||'<span class="pill">Keine Wechselspieler</span>':'Bitte zuerst Kader eingeben.';applyFolds();
 }
 function setLineup(f,i,name){if(name){for(let ff=0;ff<activeFieldCount();ff++)for(let ii=0;ii<7;ii++)if(!(ff===f&&ii===i)&&state.lineups[ff][ii]===name){alert(name+' ist in diesem Abschnitt bereits auf Feld '+(ff+1)+' eingeteilt.');renderLineups();return}}state.lineups[f][i]=name;save();renderLineups()}
@@ -137,11 +143,11 @@ function closeGoalDialog(){const d=document.getElementById('goalDialog');if(d.op
 function removeLastGoal(field){const sec=state.editing!==null?state.editing:state.round;for(let i=state.goals.length-1;i>=0;i--){if(state.goals[i].section===sec&&state.goals[i].field===field){state.goals.splice(i,1);break}}save()}
 function update(){normalizeState();document.getElementById('modeFoerder').classList.toggle('active',state.mode==='foerder');document.getElementById('modeNormal').classList.toggle('active',state.mode==='normal');document.getElementById('normalSettings').classList.toggle('hidden',state.mode!=='normal');
  const ss=document.getElementById('sectionsSelect');ss.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${(i+1)===state.sections?'selected':''}>${i+1}</option>`).join('');document.getElementById('durationInput').value=state.duration;document.getElementById('fieldsSelect').value=String(state.numFields);
- document.getElementById('headerSub').textContent='Förderliga · 6 × 12 Minuten · 2 Felder';
+ document.getElementById('headerSub').textContent=state.mode==='foerder'?'Förderliga · 6 × 12 Minuten · 2 Felder':`Normales Spiel · ${state.sections} × ${state.duration} Minuten · ${state.numFields} Feld${state.numFields===1?'':'er'}`;
  document.getElementById('overallLabel').textContent=state.mode==='foerder'?'Aktuelles Förderliga-Ergebnis':'Aktuelles Torergebnis';const totals=scoreTotals();if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,d=os.filter(x=>x==='Unentschieden').length,l=os.filter(x=>x==='Niederlage').length;document.getElementById('overall').textContent=`${w} : ${l}`;document.getElementById('counts').textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`}else{document.getElementById('overall').textContent=`${totals.own} : ${totals.opp}`;document.getElementById('counts').textContent=`Tore aus ${state.history.length} von ${state.sections} Abschnitten`}
  document.getElementById('bar').style.width=`${Math.min(100,state.history.length/state.sections*100)}%`;document.getElementById('round').textContent=state.round<state.sections?`Abschnitt ${state.round+1} von ${state.sections}`:'Spiel beendet';document.getElementById('opponent').value=state.opponent||'';document.getElementById('matchDate').value=state.matchDate||'';document.getElementById('rosterInput').value=state.roster.join('\n');document.getElementById('rosterInfo').textContent=state.roster.length?`${state.roster.length} Spieler im Kader · ${Math.max(0,state.roster.length-activeFieldCount()*7)} Wechselspieler bei vollständiger Aufstellung`:'';document.getElementById('rosterSummary').textContent=state.roster.length?`${state.roster.length} Spieler · tippen zum Bearbeiten`:'Noch kein Kader · tippen zum Öffnen';
  const current=state.editing!==null?state.editing:state.round;document.getElementById('sectionTitle').textContent=current<state.sections?`${state.editing!==null?'Abschnitt '+(current+1)+' bearbeiten':'Abschnitt '+(current+1)} · ${sectionStart(current)}–${sectionEnd(current)} Minuten`:`Spiel beendet · ${state.sections*state.duration} Minuten`;const notice=document.getElementById('lineupNotice');notice.classList.add('hidden');if(state.round>0&&state.editing===null&&state.round<state.sections){notice.textContent='Die Aufstellung des vorherigen Abschnitts wurde übernommen. Ändere nur die Spieler, die du wechseln möchtest.';notice.classList.remove('hidden')}
- renderLineups();applyFolds();renderScoreFields();const finish=document.getElementById('finishBtn');finish.disabled=state.round>=state.sections&&state.editing===null;finish.textContent=state.editing!==null?'✓ Änderung speichern':state.round>=state.sections?'✓ Spiel beendet':'✓ Abschnitt abschließen';renderHistory();renderStats();renderFinal();renderArchives();save()}
+ renderLineups();applyFolds();renderScoreFields();const finish=document.getElementById('finishBtn');finish.disabled=state.round>=state.sections&&state.editing===null;finish.textContent=state.editing!==null?'✓ Änderung speichern':state.round>=state.sections?'✓ Spiel beendet':`Abschnitt ${state.round+1} abschließen`;renderHistory();renderStats();renderFinal();renderArchives();save()}
 function finishRound(){const err=validateLineup();if(err&&!confirm(err+'\n\nAbschnitt trotzdem ohne vollständige Aufstellung speichern?'))return;const idx=state.editing!==null?state.editing:state.round;if(idx>=state.sections)return;const rec={fieldScores:clone(state.fields.slice(0,activeFieldCount())),lineups:clone(state.lineups),duration:state.duration,start:sectionStart(idx),end:sectionEnd(idx)};
  if(state.editing!==null){state.history[idx]=rec;state.editing=null}else{state.history.push(rec);state.round++;}
  state.fields=[{own:0,opp:0},{own:0,opp:0}];if(state.round<state.sections&&state.history.length)state.lineups=clone(state.history[state.history.length-1].lineups);update()}
@@ -160,8 +166,8 @@ function buildCSV(data){const lines=[];const sep=';';lines.push(['Spiel','Wert']
 function playerStatsFor(data){const old=state;state=data;const r=playerStats();state=old;return r}
 function downloadCSV(data){const csv=buildCSV(data),blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`FCG_${(data.matchDate||'Spiel')}_${(data.opponent||'Gegner').replace(/[^a-z0-9äöüß]+/gi,'_')}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function exportCurrentCSV(){downloadCSV(clone(state))}
-function archiveMatch(){const archives=getArchives();const copy=clone(state);copy.archiveId=Date.now();archives.unshift(copy);localStorage.setItem('u13archives_v6',JSON.stringify(archives.slice(0,50)));renderArchives();alert('Spiel wurde archiviert.')}
-function getArchives(){try{return JSON.parse(localStorage.getItem('u13archives_v6'))||[]}catch(e){return []}}
+function archiveMatch(){const archives=getArchives();const copy=clone(state);copy.archiveId=Date.now();archives.unshift(copy);localStorage.setItem('u13archives_v7',JSON.stringify(archives.slice(0,50)));renderArchives();alert('Spiel wurde archiviert.')}
+function getArchives(){try{return JSON.parse(localStorage.getItem('u13archives_v7'))||[]}catch(e){return []}}
 function renderArchives(){const box=document.getElementById('archiveList'),a=getArchives();if(!a.length){box.textContent='Noch keine Spiele archiviert.';return}box.innerHTML=a.map((x,i)=>`<div class="archiveitem"><b>${esc(x.matchDate||'Ohne Datum')} · ${esc(x.opponent||'Ohne Gegner')}</b><br>${x.mode==='foerder'?'Förderliga':'Normales Spiel'} · ${x.history?.length||0}/${x.sections} Abschnitte<br><button class="editbtn" onclick="exportArchive(${i})">⬇︎ Export</button> <button class="editbtn" onclick="loadArchive(${i})">Öffnen</button></div>`).join('')}
 function exportArchive(i){const a=getArchives();if(a[i])downloadCSV(a[i])}
 function loadArchive(i){const a=getArchives();if(!a[i])return;if(confirm('Archiviertes Spiel öffnen? Das aktuelle Spiel wird ersetzt.')){state=clone(a[i]);delete state.archiveId;update()}}

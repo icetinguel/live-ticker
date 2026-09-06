@@ -1,9 +1,4 @@
 {
-  "name": "U13 Förderliga Live",
-  "short_name": "U13 Live",
-  "description": "U13 Förderliga Live mit Kader, Aufstellungen, Spielminuten, Torschützen und Excel/Numbers-Export",
-  "start_url": "./",
-  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f4f6f7",
@@ -22,5 +17,10 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "name": "FCG Match Live",
+  "short_name": "FCG Match",
+  "description": "FCG Match Live",
+  "start_url": "./",
+  "scope": "./"
 }
