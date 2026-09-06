@@ -1,7 +1,7 @@
 {
   "name": "U13 Förderliga Live",
   "short_name": "U13 Live",
-  "description": "Live-Erfassung für U13 Förderliga Spiele im Twin-Modus",
+  "description": "U13 Förderliga Live mit Kader, Aufstellungen, Spielminuten, Torschützen und Excel/Numbers-Export",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -10,7 +10,17 @@
   "theme_color": "#0b5e3c",
   "lang": "de-DE",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
