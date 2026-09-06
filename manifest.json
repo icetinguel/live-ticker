@@ -1,0 +1,9 @@
+{
+  "name": "U13 Förderliga Live",
+  "short_name": "U13 Live",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f7",
+  "theme_color": "#0b5e3c",
+  "lang": "de"
+}

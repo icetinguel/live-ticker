@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="U13 Live">
+<meta name="theme-color" content="#0b5e3c">
+<title>U13 Förderliga Live</title>
+<style>
+:root{--green:#0b5e3c;--green2:#12804f;--bg:#f4f6f7;--card:#fff;--text:#17201b;--muted:#69736e;--red:#c0392b;--yellow:#c88a00;--line:#dce2df}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:var(--green);color:white;padding:calc(14px + env(safe-area-inset-top)) 16px 16px;text-align:center}
+h1{font-size:21px;margin:0 0 5px}.sub{font-size:13px;opacity:.9}
+main{max-width:620px;margin:auto;padding:12px 12px 90px}
+.card{background:var(--card);border-radius:18px;padding:14px;margin:10px 0;box-shadow:0 2px 10px #0000000d}
+.biglabel{text-align:center;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.score{text-align:center;font-size:54px;font-weight:800;color:var(--green);line-height:1.05;margin:2px 0 6px}
+.status{text-align:center;font-weight:700;font-size:14px}
+.progress{height:8px;background:#e2e7e4;border-radius:9px;overflow:hidden;margin:12px 0 4px}.bar{height:100%;background:var(--green);width:0%}
+.section{font-weight:800;margin:4px 0 10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{border:2px solid var(--line);border-radius:16px;padding:12px}.field h3{text-align:center;margin:0 0 10px;font-size:17px}
+.actual{text-align:center;font-size:27px;font-weight:800;margin:6px 0 12px}.label{text-align:center;font-size:11px;color:var(--muted);text-transform:uppercase}
+.row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:8px 0}.row strong{font-size:23px;min-width:28px;text-align:center}
+button{border:0;border-radius:12px;min-height:44px;font-size:16px;font-weight:800;padding:8px 12px;background:#e8eeeb;color:var(--green)}
+button:active{transform:scale(.97)} .plus{background:var(--green);color:white;width:48px}.minus{width:48px}
+.result{margin-top:10px;text-align:center;padding:8px;border-radius:10px;font-weight:800}.win{background:#e3f3e9;color:var(--green)}.draw{background:#fff2cf;color:#8a6200}.loss{background:#fbe5e2;color:var(--red)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}.controls button{background:var(--green);color:#fff}
+.secondary{background:#e8eeeb!important;color:var(--green)!important}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:center}th{color:var(--muted);font-size:11px;text-transform:uppercase}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px}.bottom button{min-width:31%;font-size:13px}
+input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:16px;margin-top:5px}
+.small{font-size:12px;color:var(--muted);line-height:1.4}
+</style>
+</head>
+<body>
+<header><h1>⚽ U13 Förderliga Live</h1><div class="sub">6 × 12 Minuten · 2 Felder · 12 Einzelspiele</div></header>
+<main>
+<div class="card">
+  <div class="biglabel">Aktuelles Förderliga-Ergebnis</div>
+  <div class="score" id="overall">0 : 0</div>
+  <div class="status" id="counts">0 Siege · 0 Unentschieden · 0 Niederlagen</div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+  <div class="small" style="text-align:center" id="round">Spiel 1 von 6 · Abschnitt noch offen</div>
+</div>
+
+<div class="card">
+  <label class="small">Gegner (optional)<input id="opponent" placeholder="z. B. TSV Nördlingen"></label>
+</div>
+
+<div class="card">
+<div class="section" id="sectionTitle">Abschnitt 1 · 0–12 Minuten</div>
+<div class="grid">
+  <div class="field">
+    <h3>Feld 1</h3>
+    <div class="label">Tatsächliches Ergebnis</div><div class="actual" id="score1">0 : 0</div>
+    <div class="row"><button class="minus" onclick="change(0,'own',-1)">−</button><strong id="own0">0</strong><button class="plus" onclick="change(0,'own',1)">+</button></div>
+    <div class="small" style="text-align:center">Eigene Tore</div>
+    <div class="row"><button class="minus" onclick="change(0,'opp',-1)">−</button><strong id="opp0">0</strong><button class="plus" onclick="change(0,'opp',1)">+</button></div>
+    <div class="small" style="text-align:center">Gegentore</div>
+    <div class="result draw" id="result0">noch offen</div>
+  </div>
+  <div class="field">
+    <h3>Feld 2</h3>
+    <div class="label">Tatsächliches Ergebnis</div><div class="actual" id="score2">0 : 0</div>
+    <div class="row"><button class="minus" onclick="change(1,'own',-1)">−</button><strong id="own1">0</strong><button class="plus" onclick="change(1,'own',1)">+</button></div>
+    <div class="small" style="text-align:center">Eigene Tore</div>
+    <div class="row"><button class="minus" onclick="change(1,'opp',-1)">−</button><strong id="opp1">0</strong><button class="plus" onclick="change(1,'opp',1)">+</button></div>
+    <div class="small" style="text-align:center">Gegentore</div>
+    <div class="result draw" id="result1">noch offen</div>
+  </div>
+</div>
+<div class="controls" style="margin-top:12px">
+<button onclick="finishRound()">✓ Abschnitt abschließen</button>
+<button class="secondary" onclick="resetRound()">↺ Abschnitt zurücksetzen</button>
+</div>
+</div>
+
+<div class="card">
+<div class="section">Bisherige Wertung</div>
+<table><thead><tr><th>Spiel</th><th>Feld 1</th><th>Feld 2</th><th>Wertung</th></tr></thead>
+<tbody id="history"></tbody></table>
+</div>
+
+<div class="card" id="finalCard" style="display:none;text-align:center">
+<div class="biglabel">Spiel beendet</div><div class="score" id="finalScore">0 : 0</div>
+<div id="finalCounts" class="status"></div>
+<div class="small" id="actualTotal"></div>
+</div>
+</main>
+<div class="bottom">
+<button onclick="undoLast()">↶ Rückgängig</button>
+<button onclick="newMatch()">＋ Neues Spiel</button>
+<button onclick="shareResult()">↗ Ergebnis teilen</button>
+</div>
+<script>
+const state={round:0, fields:[{own:0,opp:0},{own:0,opp:0}], history:[], opponent:""};
+function save(){localStorage.setItem("u13live",JSON.stringify(state))}
+function load(){try{let x=JSON.parse(localStorage.getItem("u13live"));if(x)Object.assign(state,x)}catch(e){}}
+function outcome(f){return f.own>f.opp?"Sieg":f.own<f.opp?"Niederlage":"Unentschieden"}
+function update(){
+  document.getElementById("own0").textContent=state.fields[0].own;document.getElementById("opp0").textContent=state.fields[0].opp;
+  document.getElementById("own1").textContent=state.fields[1].own;document.getElementById("opp1").textContent=state.fields[1].opp;
+  document.getElementById("score1").textContent=state.fields[0].own+" : "+state.fields[0].opp;
+  document.getElementById("score2").textContent=state.fields[1].own+" : "+state.fields[1].opp;
+  [0,1].forEach(i=>{let o=outcome(state.fields[i]),e=document.getElementById("result"+i);e.textContent=o==="Unentschieden"&&state.fields[i].own===0&&state.fields[i].opp===0?"noch offen":o;e.className="result "+(o==="Sieg"?"win":o==="Niederlage"?"loss":"draw")});
+  document.getElementById("sectionTitle").textContent=`Abschnitt ${Math.min(state.round+1,6)} · ${state.round*12}–${(state.round+1)*12} Minuten`;
+  const w=state.history.filter(x=>x.o==="Sieg").length,l=state.history.filter(x=>x.o==="Niederlage").length,d=state.history.filter(x=>x.o==="Unentschieden").length;
+  document.getElementById("overall").textContent=w+" : "+l;document.getElementById("counts").textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`;
+  document.getElementById("bar").style.width=(state.history.length/12*100)+"%";
+  document.getElementById("round").textContent=state.round<6?`Spiel ${state.round+1} von 6 · ${state.history.length} von 12 Einzelspielen erfasst`:"Spiel beendet";
+  document.getElementById("opponent").value=state.opponent||"";
+  const tbody=document.getElementById("history");tbody.innerHTML="";
+  state.history.forEach((x,i)=>{let tr=document.createElement("tr");tr.innerHTML=`<td>${Math.floor(i/2)+1}</td><td>${x.s1}</td><td>${x.s2}</td><td>${x.o}</td>`;tbody.appendChild(tr)});
+  if(state.history.length>=12){document.getElementById("finalCard").style.display="block";document.getElementById("finalScore").textContent=w+" : "+l;document.getElementById("finalCounts").textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`;let a=state.history.reduce((z,x)=>{z.own+=x.own;z.opp+=x.opp;return z},{own:0,opp:0});document.getElementById("actualTotal").textContent=`Tatsächliche Tore insgesamt: ${a.own} : ${a.opp}`;}else document.getElementById("finalCard").style.display="none";
+  save();
+}
+function change(i,k,n){state.fields[i][k]=Math.max(0,state.fields[i][k]+n);update()}
+function finishRound(){
+  if(state.round>=6){alert("Alle 6 Abschnitte sind bereits abgeschlossen.");return}
+  if(state.fields.some(f=>f.own===0&&f.opp===0)){if(!confirm("Ein Feld steht noch auf 0:0. Trotzdem Abschnitt abschließen?"))return}
+  state.history.push({s1:state.fields[0].own+":"+state.fields[0].opp,s2:state.fields[1].own+":"+state.fields[1].opp,o:state.fields.map(outcome).join(" / "),own:state.fields[0].own+state.fields[1].own,opp:state.fields[0].opp+state.fields[1].opp});
+  state.round++;state.fields=[{own:0,opp:0},{own:0,opp:0}];update()
+}
+function resetRound(){state.fields=[{own:0,opp:0},{own:0,opp:0}];update()}
+function undoLast(){if(!state.history.length)return;state.history.splice(-2,2);state.round=Math.max(0,state.round-1);let last=state.history.length;state.fields=[{own:0,opp:0},{own:0,opp:0}];update()}
+function newMatch(){if(confirm("Neues Spiel beginnen? Die aktuelle Erfassung wird gelöscht.")){localStorage.removeItem("u13live");location.reload()}}
+function shareResult(){let w=state.history.filter(x=>x.o.includes("Sieg")).length,l=state.history.filter(x=>x.o.includes("Niederlage")).length,d=state.history.filter(x=>x.o.includes("Unentschieden")).length;let t=`U13 Förderliga${state.opponent?" vs. "+state.opponent:""}: ${w}:${l} (${w} Siege, ${d} Remis, ${l} Niederlagen)`;if(navigator.share)navigator.share({title:"U13 Förderliga",text:t});else navigator.clipboard?.writeText(t).then(()=>alert("Ergebnis kopiert."))}
+document.getElementById("opponent").addEventListener("input",e=>{state.opponent=e.target.value;save()});
+load();update();
+</script>
+</body></html>
