@@ -53,10 +53,20 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .swap-trigger{min-width:44px;min-height:44px;padding:6px}
 .swap-bench{border:2px solid var(--line);min-height:38px}
 .swap-bench.is-selected{outline:3px solid var(--green);outline-offset:2px}
+.match-headline{font-weight:800}
+#matchHeader{font-size:15px;font-weight:800;margin-bottom:2px}
+
+.current-focus{border:2px solid var(--green);box-shadow:0 3px 14px #0b5e3c18}
+.current-focus .section{color:var(--green)}
+.dense-lineup .swap-row{gap:4px;margin:1px 0}
+.dense-lineup .slot{grid-template-columns:52px 1fr;gap:5px;margin:2px 0}
+.dense-lineup .slot span{font-size:11px}
+.dense-lineup select{min-height:38px;padding-top:5px;padding-bottom:5px}
+.dense-lineup .swap-trigger{min-height:38px;height:38px}
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live</h1><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live</h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
 <div class="card">
  <div class="section">Spielmodus</div>
@@ -80,8 +90,13 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
   <div class="progress"><div class="bar" id="bar"></div></div><div class="small" style="text-align:center" id="round"></div>
 </div>
 
-<div class="card">
- <div class="formgrid"><label class="small">Gegner<input id="opponent" placeholder="z. B. TSV Nördlingen"></label><label class="small">Datum<input id="matchDate" type="date"></label></div>
+<div class="card compactcard">
+ <button class="foldhead" type="button" onclick="toggleMatchInfo()" aria-controls="matchInfoBody" id="matchInfoBtn" aria-expanded="true">
+  <span class="foldtitle">Spieldaten</span><span class="foldsummary" id="matchInfoSummary">Gegner & Datum eingeben</span><span class="foldarrow" id="matchInfoArrow">⌃</span>
+ </button>
+ <div id="matchInfoBody" class="foldbody">
+  <div class="formgrid"><label class="small">Gegner<input id="opponent" placeholder="z. B. TSV Nördlingen"></label><label class="small">Datum<input id="matchDate" type="date"></label></div>
+ </div>
 </div>
 
 <div class="card compactcard">
@@ -98,7 +113,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  </div>
 </div>
 
-<div class="card" id="lineupCard">
+<div class="card current-focus" id="lineupCard">
  <div class="section" id="sectionTitle">Abschnitt 1</div>
  <div id="lineupNotice" class="notice hidden"></div>
  <div class="quickswap-note">Schnellwechsel: Bankspieler antippen, danach den Spieler in der Aufstellung antippen.</div>
@@ -108,7 +123,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  <div class="lineup-actions"><button class="secondary" onclick="copyPreviousLineup()">↻ Vorherige Aufstellung</button><button class="secondary" onclick="clearLineup()">Aufstellung leeren</button></div>
 </div>
 
-<div class="card">
+<div class="card current-focus" id="liveScoreCard">
  <div class="section">Live-Ergebnis</div>
  <div class="grid" id="scoreGrid"></div>
  <div class="controls" style="margin-top:12px"><button id="finishBtn" class="secondary" onclick="finishRound()">Abschnitt 1 abschließen</button><button class="secondary" onclick="resetRound()">↺ Abschnitt zurücksetzen</button></div>
@@ -134,7 +149,12 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  <div class="small" style="margin-top:8px">Export als CSV mit Ergebnissen, Aufstellungen, Spielminuten und Torschützen.</div>
 </div>
 
-<div class="card"><div class="section">Gespeicherte Spiele</div><div id="archiveList" class="small">Noch keine Spiele archiviert.</div></div>
+<div class="card compactcard">
+ <button class="foldhead" type="button" onclick="toggleFold('archives')" aria-controls="archiveFoldBody" id="archiveFoldBtn" aria-expanded="false">
+  <span class="foldtitle">Gespeicherte Spiele</span><span class="foldsummary" id="archiveSummary">Noch keine Spiele</span><span class="foldarrow" id="archiveArrow">⌄</span>
+ </button>
+ <div id="archiveFoldBody" class="foldbody hidden"><div id="archiveList" class="small">Noch keine Spiele archiviert.</div></div>
+</div>
 </main>
 
 <div class="bottom"><button onclick="undoLast()">↶ Rückgängig</button><button onclick="newMatch()">＋ Neues Spiel</button><button onclick="shareResult()">↗ Teilen</button></div>
@@ -194,7 +214,7 @@ function buildDefaultLineup(){
  ];
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-const uiFold={roster:false,field1:false,field2:false,stats:false,history:false};
+const uiFold={roster:false,field1:false,field2:false,stats:false,history:false,archives:false};
 let quickSwap={benchPlayer:'',field:null,slot:null};
 function toggleFold(which){uiFold[which]=!uiFold[which];applyFolds()}
 function applyFolds(){
@@ -205,6 +225,8 @@ function applyFolds(){
  if(sb){sb.classList.toggle('hidden',!uiFold.stats);sa.textContent=uiFold.stats?'⌃':'⌄';sbtn.setAttribute('aria-expanded',String(uiFold.stats))}
  const hb=document.getElementById('historyFoldBody'),ha=document.getElementById('historyArrow'),hbtn=document.getElementById('historyFoldBtn');
  if(hb){hb.classList.toggle('hidden',!uiFold.history);ha.textContent=uiFold.history?'⌃':'⌄';hbtn.setAttribute('aria-expanded',String(uiFold.history))}
+ const ab=document.getElementById('archiveFoldBody'),aa=document.getElementById('archiveArrow'),abtn=document.getElementById('archiveFoldBtn');
+ if(ab){ab.classList.toggle('hidden',!uiFold.archives);aa.textContent=uiFold.archives?'⌃':'⌄';abtn.setAttribute('aria-expanded',String(uiFold.archives))}
 }
 function lineupSummary(f){const req=requiredPlayersPerField(),a=(state.lineups[f]||[]).slice(0,req);const count=a.filter(Boolean).length;const ts=a[0]||'TS offen';return `${count}/${req} · ${esc(ts)}`}
 
@@ -233,7 +255,7 @@ function lineupTap(field,slot){
  else quickSwap={benchPlayer:'',field,slot};
  renderLineups();
 }
-function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount(),req=requiredPlayersPerField();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden" id="fieldBody${f}">`+Array.from({length:req},(_,i)=>{const selected=quickSwap.field===f&&quickSwap.slot===i;return `<div class="swap-row ${selected?'is-selected':''}"><label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label><button type="button" class="editbtn swap-trigger" onclick="lineupTap(${f},${i})" aria-label="Spieler tauschen">↔</button></div>`}).join('')+`</div>`;grid.appendChild(div)}
+function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount(),req=requiredPlayersPerField();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden ${req>=9?'dense-lineup':''}" id="fieldBody${f}">`+Array.from({length:req},(_,i)=>{const selected=quickSwap.field===f&&quickSwap.slot===i;return `<div class="swap-row ${selected?'is-selected':''}"><label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label><button type="button" class="editbtn swap-trigger" onclick="lineupTap(${f},${i})" aria-label="Spieler tauschen">↔</button></div>`}).join('')+`</div>`;grid.appendChild(div)}
  const used=new Set(state.lineups.slice(0,n).flatMap(a=>(a||[]).slice(0,req)).filter(Boolean));const pb=previousBenchSet();const bench=state.roster.filter(x=>!used.has(x));document.getElementById('bench').innerHTML=state.roster.length?bench.map(x=>`<button type="button" class="pill swap-bench ${pb.has(x)?'prevbench':''} ${quickSwap.benchPlayer===x?'is-selected':''}" onclick="benchTap('${escJs(x)}')">${pb.has(x)?'★ ':''}${esc(x)}</button>`).join('')||'<span class="pill">Keine Wechselspieler</span>':'Bitte zuerst Kader eingeben.';quickSwapHint();applyFolds();
 }
 function setLineup(f,i,name){clearQuickSwap();if(name){const req=requiredPlayersPerField();for(let ff=0;ff<activeFieldCount();ff++)for(let ii=0;ii<req;ii++)if(!(ff===f&&ii===i)&&state.lineups[ff][ii]===name){alert(name+' ist in diesem Abschnitt bereits auf Feld '+(ff+1)+' eingeteilt.');renderLineups();return}}state.lineups[f][i]=name;save();renderLineups()}
@@ -260,7 +282,19 @@ function escJs(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").rep
 function selectScorer(name){if(pendingGoal){state.goals.push({...pendingGoal,scorer:name});save()}closeGoalDialog()}
 function closeGoalDialog(){const d=document.getElementById('goalDialog');if(d.open)d.close();pendingGoal=null}
 function removeLastGoal(field){const sec=state.editing!==null?state.editing:state.round;for(let i=state.goals.length-1;i>=0;i--){if(state.goals[i].section===sec&&state.goals[i].field===field){state.goals.splice(i,1);break}}save()}
-function update(){normalizeState();document.getElementById('modeFoerder').classList.toggle('active',state.mode==='foerder');document.getElementById('modeNormal').classList.toggle('active',state.mode==='normal');document.getElementById('foerderSettings').classList.toggle('hidden',state.mode!=='foerder');document.getElementById('normalSettings').classList.toggle('hidden',state.mode!=='normal');
+
+let matchInfoOpen=!(state.opponent&&state.matchDate);
+function formatMatchDate(v){if(!v)return '';const p=v.split('-');return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:v}
+function updateMatchInfo(){
+ const opponent=(state.opponent||'').trim(),date=formatMatchDate(state.matchDate||'');
+ const text=opponent&&date?`${opponent} · ${date}`:opponent||date||'Gegner & Datum eingeben';
+ const mh=document.getElementById('matchHeader'),sum=document.getElementById('matchInfoSummary');
+ if(mh)mh.textContent=text;if(sum)sum.textContent=text;
+ const body=document.getElementById('matchInfoBody'),arrow=document.getElementById('matchInfoArrow'),btn=document.getElementById('matchInfoBtn');
+ if(body){body.classList.toggle('hidden',!matchInfoOpen);arrow.textContent=matchInfoOpen?'⌃':'⌄';btn.setAttribute('aria-expanded',String(matchInfoOpen))}
+}
+function toggleMatchInfo(){matchInfoOpen=!matchInfoOpen;updateMatchInfo()}
+function update(){normalizeState();updateMatchInfo();document.getElementById('modeFoerder').classList.toggle('active',state.mode==='foerder');document.getElementById('modeNormal').classList.toggle('active',state.mode==='normal');document.getElementById('foerderSettings').classList.toggle('hidden',state.mode!=='foerder');document.getElementById('normalSettings').classList.toggle('hidden',state.mode!=='normal');
  const ss=document.getElementById('sectionsSelect');ss.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${(i+1)===state.sections?'selected':''}>${i+1}</option>`).join('');document.getElementById('durationInput').value=state.duration;document.getElementById('foerderDurationInput').value=state.duration;document.getElementById('fieldsSelect').value=String(state.numFields);document.getElementById('playersPerFieldSelect').value=String(state.playersPerField);
  document.getElementById('headerSub').textContent=state.mode==='foerder'?`Förderliga · 6 × ${state.duration} Minuten · 2 Felder`:`Normales Spiel · ${state.sections} × ${state.duration} Minuten · ${state.numFields} Feld${state.numFields===1?'':'er'} · ${state.playersPerField-1}+1`;
  document.getElementById('overallLabel').textContent=state.mode==='foerder'?'Aktuelles Förderliga-Ergebnis':'Aktuelles Torergebnis';const totals=scoreTotals();if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,d=os.filter(x=>x==='Unentschieden').length,l=os.filter(x=>x==='Niederlage').length;document.getElementById('overall').textContent=`${w} : ${l}`;document.getElementById('counts').textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`}else{document.getElementById('overall').textContent=`${totals.own} : ${totals.opp}`;document.getElementById('counts').textContent=`Tore aus ${state.history.length} von ${state.sections} Abschnitten`}
@@ -288,7 +322,7 @@ function renderStats(){
 }
 function renderFinal(){const done=state.history.length>=state.sections;document.getElementById('finalCard').style.display=done?'block':'none';if(!done)return;const totals=scoreTotals();if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,d=os.filter(x=>x==='Unentschieden').length,l=os.filter(x=>x==='Niederlage').length;document.getElementById('finalScore').textContent=`${w} : ${l}`;document.getElementById('finalCounts').textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`;document.getElementById('actualTotal').textContent=`Tatsächliche Tore insgesamt: ${totals.own} : ${totals.opp}`}else{document.getElementById('finalScore').textContent=`${totals.own} : ${totals.opp}`;document.getElementById('finalCounts').textContent='Endergebnis nach Toren';document.getElementById('actualTotal').textContent=`${state.sections} Abschnitte · ${state.sections*state.duration} Minuten`}}
 function shareResult(){const totals=scoreTotals();let t;if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,l=os.filter(x=>x==='Niederlage').length,d=os.filter(x=>x==='Unentschieden').length;t=`Förderliga${state.opponent?' vs. '+state.opponent:''}: ${w}:${l} (${w} Siege, ${d} Remis, ${l} Niederlagen)`}else t=`Spiel${state.opponent?' vs. '+state.opponent:''}: ${totals.own}:${totals.opp}`;if(navigator.share)navigator.share({title:'FCG Match Live',text:t});else navigator.clipboard?.writeText(t).then(()=>alert('Ergebnis kopiert.'))}
-function newMatch(){clearQuickSwap();if(confirm('Neues Spiel beginnen? Das aktuelle Spiel wird zurückgesetzt. Vorher bei Bedarf archivieren oder exportieren.')){state=clone(DEFAULT);update()}}
+function newMatch(){clearQuickSwap();matchInfoOpen=true;if(confirm('Neues Spiel beginnen? Das aktuelle Spiel wird zurückgesetzt. Vorher bei Bedarf archivieren oder exportieren.')){state=clone(DEFAULT);update()}}
 function csvEscape(v){const s=String(v??'');return '"'+s.replace(/"/g,'""')+'"'}
 function buildCSV(data){const lines=[];const sep=';';lines.push(['Spiel','Wert'].map(csvEscape).join(sep));lines.push(['Modus',data.mode==='foerder'?'Förderliga':'Normales Spiel'].map(csvEscape).join(sep));lines.push(['Gegner',data.opponent||''].map(csvEscape).join(sep));lines.push(['Datum',data.matchDate||''].map(csvEscape).join(sep));lines.push(['Abschnitte',data.sections].map(csvEscape).join(sep));lines.push(['Minuten je Abschnitt',data.duration].map(csvEscape).join(sep));if(data.mode==='normal')lines.push(['Startformation',`${(data.playersPerField||7)-1}+1`].map(csvEscape).join(sep));lines.push([]);lines.push(['Abschnitt','Feld','Eigene Tore','Gegentore','Wertung','Torspieler','Feldspieler'].map(csvEscape).join(sep));(data.history||[]).forEach((x,i)=>(x.fieldScores||[]).slice(0,data.mode==='foerder'?2:data.numFields).forEach((f,fi)=>{const a=x.lineups?.[fi]||[];lines.push([i+1,fi+1,f.own,f.opp,outcome(f),a[0]||'',a.slice(1).join(', ')].map(csvEscape).join(sep))}));lines.push([]);lines.push(['Torschützen'].map(csvEscape).join(sep));lines.push(['Abschnitt','Feld','Tor','Spieler'].map(csvEscape).join(sep));(data.goals||[]).forEach(g=>lines.push([g.section+1,g.field+1,g.goalNo,g.scorer||''].map(csvEscape).join(sep)));lines.push([]);lines.push(['Spieler','Abschnitte','Spielminuten','Feld 1','Feld 2','Als TS','Tore'].map(csvEscape).join(sep));playerStatsFor(data).forEach(s=>lines.push([s.name,s.sections,s.minutes,s.f1,s.f2,s.gk,s.goals].map(csvEscape).join(sep)));return '\ufeff'+lines.join('\r\n')}
 function playerStatsFor(data){const old=state;state=data;const r=playerStats();state=old;return r}
@@ -296,14 +330,15 @@ function downloadCSV(data){const csv=buildCSV(data),blob=new Blob([csv],{type:'t
 function exportCurrentCSV(){downloadCSV(clone(state))}
 function archiveMatch(){const archives=getArchives();const copy=clone(state);if(copy.archiveId){const i=archives.findIndex(x=>x.archiveId===copy.archiveId);if(i>=0){archives[i]=copy;localStorage.setItem('u13archives_v7',JSON.stringify(archives.slice(0,50)));renderArchives();alert('Gespeichertes Spiel wurde aktualisiert.');return}}copy.archiveId=Date.now();state.archiveId=copy.archiveId;archives.unshift(copy);localStorage.setItem('u13archives_v7',JSON.stringify(archives.slice(0,50)));save();renderArchives();alert('Spiel wurde archiviert.')}
 function getArchives(){try{return JSON.parse(localStorage.getItem('u13archives_v7'))||[]}catch(e){return []}}
-function renderArchives(){const box=document.getElementById('archiveList'),a=getArchives();if(!a.length){box.textContent='Noch keine Spiele archiviert.';return}box.innerHTML=a.map((x,i)=>`<div class="archiveitem"><b>${esc(x.matchDate||'Ohne Datum')} · ${esc(x.opponent||'Ohne Gegner')}</b><br>${x.mode==='foerder'?'Förderliga':`Normales Spiel · ${(x.playersPerField||7)-1}+1`} · ${x.history?.length||0}/${x.sections} Abschnitte<br><button class="editbtn" onclick="exportArchive(${i})">⬇︎ Export</button> <button class="editbtn" onclick="loadArchive(${i})">Öffnen</button> <button class="editbtn" onclick="deleteArchive(${i})">🗑 Löschen</button></div>`).join('')}
+function renderArchives(){const box=document.getElementById('archiveList'),a=getArchives(),sum=document.getElementById('archiveSummary');if(sum)sum.textContent=a.length?`${a.length} ${a.length===1?'gespeichertes Spiel':'gespeicherte Spiele'}`:'Noch keine Spiele';if(!a.length){box.textContent='Noch keine Spiele archiviert.';return}box.innerHTML=a.map((x,i)=>`<div class="archiveitem"><b>${esc(x.matchDate||'Ohne Datum')} · ${esc(x.opponent||'Ohne Gegner')}</b><br>${x.mode==='foerder'?'Förderliga':`Normales Spiel · ${(x.playersPerField||7)-1}+1`} · ${x.history?.length||0}/${x.sections} Abschnitte<br><button class="editbtn" onclick="exportArchive(${i})">⬇︎ Export</button> <button class="editbtn" onclick="loadArchive(${i})">Öffnen</button> <button class="editbtn" onclick="deleteArchive(${i})">🗑 Löschen</button></div>`).join('')}
 function exportArchive(i){const a=getArchives();if(a[i])downloadCSV(a[i])}
 function deleteArchive(i){const a=getArchives();if(!a[i])return;const name=`${a[i].matchDate||'Ohne Datum'} · ${a[i].opponent||'Ohne Gegner'}`;if(!confirm(`Gespeichertes Spiel „${name}“ wirklich löschen?`))return;const deletedId=a[i].archiveId;a.splice(i,1);localStorage.setItem('u13archives_v7',JSON.stringify(a));if(state.archiveId&&state.archiveId===deletedId){delete state.archiveId;save()}renderArchives();}
-function loadArchive(i){clearQuickSwap();const a=getArchives();if(!a[i])return;if(confirm('Archiviertes Spiel öffnen? Das aktuelle Spiel wird ersetzt.')){state=clone(a[i]);update()}}
+function loadArchive(i){clearQuickSwap();const a=getArchives();if(!a[i])return;if(confirm('Archiviertes Spiel öffnen? Das aktuelle Spiel wird ersetzt.')){state=clone(a[i]);matchInfoOpen=!(state.opponent&&state.matchDate);update()}}
 
 document.getElementById('gk1Select').addEventListener('change',e=>{state.goalkeepers[0]=e.target.value;if(state.goalkeepers[1]===e.target.value)state.goalkeepers[1]='';save();renderGoalkeeperSelectors()});
 document.getElementById('gk2Select').addEventListener('change',e=>{state.goalkeepers[1]=e.target.value;if(state.goalkeepers[0]===e.target.value)state.goalkeepers[0]='';save();renderGoalkeeperSelectors()});
-document.getElementById('opponent').addEventListener('input',e=>{state.opponent=e.target.value;save()});document.getElementById('matchDate').addEventListener('change',e=>{state.matchDate=e.target.value;save()});document.getElementById('sectionsSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.sections;alert('Abschnittszahl kann nach Spielbeginn nicht mehr geändert werden.');return}state.sections=+e.target.value;update()});document.getElementById('foerderDurationInput').addEventListener('change',e=>{if(state.history.length){e.target.value=state.duration;alert('Abschnittslänge kann nach Spielbeginn nicht mehr geändert werden.');return}state.duration=Math.min(90,Math.max(1,+e.target.value||12));update()});document.getElementById('durationInput').addEventListener('change',e=>{if(state.history.length){e.target.value=state.duration;alert('Abschnittslänge kann nach Spielbeginn nicht mehr geändert werden.');return}state.duration=Math.min(90,Math.max(1,+e.target.value||1));update()});document.getElementById('fieldsSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.numFields;alert('Feldanzahl kann nach Spielbeginn nicht mehr geändert werden.');return}state.numFields=+e.target.value;update()});document.getElementById('playersPerFieldSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.playersPerField;alert('Startformation kann nach Spielbeginn nicht mehr geändert werden.');return}state.playersPerField=+e.target.value;state.lineups=state.lineups.map(a=>Array.from({length:11},(_,i)=>i<state.playersPerField?(a?.[i]||''):''));buildDefaultLineup();update()});
+document.getElementById('opponent').addEventListener('input',e=>{state.opponent=e.target.value;save();updateMatchInfo()});
+document.getElementById('opponent').addEventListener('blur',()=>{if(state.opponent&&state.matchDate){matchInfoOpen=false;updateMatchInfo()}});document.getElementById('matchDate').addEventListener('change',e=>{state.matchDate=e.target.value;if(state.opponent&&state.matchDate)matchInfoOpen=false;save();updateMatchInfo()});document.getElementById('sectionsSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.sections;alert('Abschnittszahl kann nach Spielbeginn nicht mehr geändert werden.');return}state.sections=+e.target.value;update()});document.getElementById('foerderDurationInput').addEventListener('change',e=>{if(state.history.length){e.target.value=state.duration;alert('Abschnittslänge kann nach Spielbeginn nicht mehr geändert werden.');return}state.duration=Math.min(90,Math.max(1,+e.target.value||12));update()});document.getElementById('durationInput').addEventListener('change',e=>{if(state.history.length){e.target.value=state.duration;alert('Abschnittslänge kann nach Spielbeginn nicht mehr geändert werden.');return}state.duration=Math.min(90,Math.max(1,+e.target.value||1));update()});document.getElementById('fieldsSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.numFields;alert('Feldanzahl kann nach Spielbeginn nicht mehr geändert werden.');return}state.numFields=+e.target.value;update()});document.getElementById('playersPerFieldSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.playersPerField;alert('Startformation kann nach Spielbeginn nicht mehr geändert werden.');return}state.playersPerField=+e.target.value;state.lineups=state.lineups.map(a=>Array.from({length:11},(_,i)=>i<state.playersPerField?(a?.[i]||''):''));buildDefaultLineup();update()});
 load();update();
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error))}</script>
