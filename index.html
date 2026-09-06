@@ -23,7 +23,7 @@ button{border:0;border-radius:12px;min-height:44px;font-size:15px;font-weight:80
 input,select,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:16px;background:#fff;color:var(--text)}textarea{min-height:120px;resize:vertical}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef3f0;font-size:12px;margin:2px}.bench{line-height:2}.slot{display:grid;grid-template-columns:64px 1fr;gap:8px;align-items:center;margin:6px 0}.slot span{font-size:12px;color:var(--muted);font-weight:700}.lineup-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:center}th{color:var(--muted);font-size:10px;text-transform:uppercase}.scroll{overflow-x:auto}.editbtn{min-height:30px;padding:4px 7px;font-size:12px;border-radius:8px;margin-top:4px}.modebox{display:grid;grid-template-columns:1fr 1fr;gap:8px}.modebox button.active{background:var(--green);color:#fff}.notice{padding:9px 10px;border-radius:10px;background:#fff5d7;font-size:12px;color:#765800;margin:8px 0}.hidden{display:none!important}
 .bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px;z-index:5}.bottom button{min-width:29%;font-size:12px}
-dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow:0 12px 45px #0004}dialog::backdrop{background:#0006}.goalchoices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.goalchoices button{min-height:42px}.archiveitem{border-top:1px solid var(--line);padding:10px 0}.archiveitem:first-child{border-top:0}
+dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow:0 12px 45px #0004}dialog::backdrop{background:#0006}.goalchoices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.goalchoices button{min-height:42px}.archiveitem{border-top:1px solid var(--line);padding:10px 0}.archiveitem:first-child{border-top:0}.collapse{border:0}.collapse>summary{list-style:none;cursor:pointer;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px}.collapse>summary::-webkit-details-marker{display:none}.collapse>summary:after{content:'▾';font-size:16px;color:var(--green);transition:transform .15s ease}.collapse[open]>summary:after{transform:rotate(180deg)}.collapse-body{padding-top:8px}.field.collapse{padding:0 12px}.field.collapse>summary{padding:8px 0}.field.collapse .collapse-body{padding:0 0 12px}
 @media(max-width:520px){.grid,.formgrid{grid-template-columns:1fr}.score{font-size:46px}.slot{grid-template-columns:58px 1fr}.controls{grid-template-columns:1fr}.lineup-actions{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -45,11 +45,15 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </div>
 
 <div class="card">
- <div class="section">Kader</div>
- <div class="small">Spielernamen einmalig eingeben – ein Name pro Zeile. Der Kader bleibt für das aktuelle Spiel gespeichert.</div>
- <textarea id="rosterInput" placeholder="Lukas&#10;Emir&#10;Leon&#10;..."></textarea>
- <div class="controls" style="margin-top:8px"><button onclick="saveRoster()">✓ Kader übernehmen</button><button class="secondary" onclick="clearRoster()">Leeren</button></div>
- <div id="rosterInfo" class="small" style="margin-top:8px"></div>
+ <details class="collapse" id="rosterCollapse">
+  <summary><span>👥 Kader</span><span id="rosterSummary" class="small"></span></summary>
+  <div class="collapse-body">
+   <div class="small">Spielernamen einmalig eingeben – ein Name pro Zeile. Der Kader bleibt für das aktuelle Spiel gespeichert.</div>
+   <textarea id="rosterInput" placeholder="Lukas&#10;Emir&#10;Leon&#10;..."></textarea>
+   <div class="controls" style="margin-top:8px"><button onclick="saveRoster()">✓ Kader übernehmen</button><button class="secondary" onclick="clearRoster()">Leeren</button></div>
+   <div id="rosterInfo" class="small" style="margin-top:8px"></div>
+  </div>
+ </details>
 </div>
 
 <div class="card" id="lineupCard">
@@ -71,7 +75,10 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </div>
 
 <div class="card" id="statsCard">
- <div class="section">Einsatzstatistik</div><div class="scroll"><table><thead><tr><th>Spieler</th><th>Abschn.</th><th>Min.</th><th>F1</th><th>F2</th><th>TS</th><th>Tore</th></tr></thead><tbody id="statsBody"></tbody></table></div>
+ <details class="collapse" id="statsCollapse">
+  <summary><span>📊 Einsatzstatistik</span><span class="small">anzeigen</span></summary>
+  <div class="collapse-body"><div class="scroll"><table><thead><tr><th>Spieler</th><th>Abschn.</th><th>Min.</th><th>F1</th><th>F2</th><th>TS</th><th>Tore</th></tr></thead><tbody id="statsBody"></tbody></table></div></div>
+ </details>
 </div>
 
 <div class="card" id="finalCard" style="display:none;text-align:center"><div class="biglabel">Spiel beendet</div><div class="score" id="finalScore">0 : 0</div><div id="finalCounts" class="status"></div><div class="small" id="actualTotal"></div></div>
@@ -109,7 +116,7 @@ function scoreTotals(){return state.history.reduce((a,x)=>{a.own+=(x.fieldScores
 function allOutcomes(){return state.history.flatMap(x=>(x.fieldScores||[]).slice(0,activeFieldCount()).map(outcome))}
 function rosterOptions(selected){return '<option value="">– auswählen –</option>'+state.roster.map(n=>`<option value="${esc(n)}" ${n===selected?'selected':''}>${esc(n)}</option>`).join('')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='field';div.innerHTML=`<h3>Feld ${f+1}</h3>`+Array.from({length:7},(_,i)=>`<label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label>`).join('');grid.appendChild(div)}
+function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount();for(let f=0;f<n;f++){const div=document.createElement('details');div.className='field collapse';const filled=state.lineups[f].filter(Boolean).length;const keeper=state.lineups[f][0]||'kein TS';div.innerHTML=`<summary><span>Feld ${f+1}</span><span class="small">${filled}/7 · ${esc(keeper)}</span></summary><div class="collapse-body">`+Array.from({length:7},(_,i)=>`<label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label>`).join('')+`</div>`;grid.appendChild(div)}
  const used=new Set(state.lineups.slice(0,n).flat().filter(Boolean));document.getElementById('bench').innerHTML=state.roster.length?state.roster.filter(x=>!used.has(x)).map(x=>`<span class="pill">${esc(x)}</span>`).join('')||'<span class="pill">Keine Wechselspieler</span>':'Bitte zuerst Kader eingeben.';
 }
 function setLineup(f,i,name){if(name){for(let ff=0;ff<activeFieldCount();ff++)for(let ii=0;ii<7;ii++)if(!(ff===f&&ii===i)&&state.lineups[ff][ii]===name){alert(name+' ist in diesem Abschnitt bereits auf Feld '+(ff+1)+' eingeteilt.');renderLineups();return}}state.lineups[f][i]=name;save();renderLineups()}
@@ -129,7 +136,7 @@ function update(){normalizeState();document.getElementById('modeFoerder').classL
  const ss=document.getElementById('sectionsSelect');ss.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${(i+1)===state.sections?'selected':''}>${i+1}</option>`).join('');document.getElementById('durationInput').value=state.duration;document.getElementById('fieldsSelect').value=String(state.numFields);
  document.getElementById('headerSub').textContent='Förderliga · 6 × 12 Minuten · 2 Felder';
  document.getElementById('overallLabel').textContent=state.mode==='foerder'?'Aktuelles Förderliga-Ergebnis':'Aktuelles Torergebnis';const totals=scoreTotals();if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,d=os.filter(x=>x==='Unentschieden').length,l=os.filter(x=>x==='Niederlage').length;document.getElementById('overall').textContent=`${w} : ${l}`;document.getElementById('counts').textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`}else{document.getElementById('overall').textContent=`${totals.own} : ${totals.opp}`;document.getElementById('counts').textContent=`Tore aus ${state.history.length} von ${state.sections} Abschnitten`}
- document.getElementById('bar').style.width=`${Math.min(100,state.history.length/state.sections*100)}%`;document.getElementById('round').textContent=state.round<state.sections?`Abschnitt ${state.round+1} von ${state.sections}`:'Spiel beendet';document.getElementById('opponent').value=state.opponent||'';document.getElementById('matchDate').value=state.matchDate||'';document.getElementById('rosterInput').value=state.roster.join('\n');document.getElementById('rosterInfo').textContent=state.roster.length?`${state.roster.length} Spieler im Kader · ${Math.max(0,state.roster.length-activeFieldCount()*7)} Wechselspieler bei vollständiger Aufstellung`:'';
+ document.getElementById('bar').style.width=`${Math.min(100,state.history.length/state.sections*100)}%`;document.getElementById('round').textContent=state.round<state.sections?`Abschnitt ${state.round+1} von ${state.sections}`:'Spiel beendet';document.getElementById('opponent').value=state.opponent||'';document.getElementById('matchDate').value=state.matchDate||'';document.getElementById('rosterInput').value=state.roster.join('\n');document.getElementById('rosterInfo').textContent=state.roster.length?`${state.roster.length} Spieler im Kader · ${Math.max(0,state.roster.length-activeFieldCount()*7)} Wechselspieler bei vollständiger Aufstellung`:'';document.getElementById('rosterSummary').textContent=state.roster.length?`${state.roster.length} Spieler`:'leer';
  const current=state.editing!==null?state.editing:state.round;document.getElementById('sectionTitle').textContent=current<state.sections?`${state.editing!==null?'Abschnitt '+(current+1)+' bearbeiten':'Abschnitt '+(current+1)} · ${sectionStart(current)}–${sectionEnd(current)} Minuten`:`Spiel beendet · ${state.sections*state.duration} Minuten`;const notice=document.getElementById('lineupNotice');notice.classList.add('hidden');if(state.round>0&&state.editing===null&&state.round<state.sections){notice.textContent='Die Aufstellung des vorherigen Abschnitts wurde übernommen. Ändere nur die Spieler, die du wechseln möchtest.';notice.classList.remove('hidden')}
  renderLineups();renderScoreFields();const finish=document.getElementById('finishBtn');finish.disabled=state.round>=state.sections&&state.editing===null;finish.textContent=state.editing!==null?'✓ Änderung speichern':state.round>=state.sections?'✓ Spiel beendet':'✓ Abschnitt abschließen';renderHistory();renderStats();renderFinal();renderArchives();save()}
 function finishRound(){const err=validateLineup();if(err&&!confirm(err+'\n\nAbschnitt trotzdem ohne vollständige Aufstellung speichern?'))return;const idx=state.editing!==null?state.editing:state.round;if(idx>=state.sections)return;const rec={fieldScores:clone(state.fields.slice(0,activeFieldCount())),lineups:clone(state.lineups),duration:state.duration,start:sectionStart(idx),end:sectionEnd(idx)};
