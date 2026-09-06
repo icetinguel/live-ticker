@@ -63,6 +63,12 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .dense-lineup .slot span{font-size:11px}
 .dense-lineup select{min-height:38px;padding-top:5px;padding-bottom:5px}
 .dense-lineup .swap-trigger{min-height:38px;height:38px}
+
+.swap-row.stat-min{background:#fff1e6;border-radius:10px;padding:2px 4px}
+.swap-row.stat-max{background:#e8f5e9;border-radius:10px;padding:2px 4px}
+.swap-row.stat-min.is-selected,.swap-row.stat-max.is-selected{outline:3px solid var(--green);outline-offset:1px}
+
+.lineup-stat-legend{margin:4px 0 8px}
 </style>
 </head>
 <body>
@@ -118,6 +124,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  <div id="lineupNotice" class="notice hidden"></div>
  <div class="quickswap-note">Schnellwechsel: Bankspieler antippen, danach den Spieler in der Aufstellung antippen.</div>
  <div id="swapHint" class="swap-hint"></div>
+ <div class="stat-legend lineup-stat-legend"><span class="legend-pill legend-min">Wenigste Abschnitte</span><span class="legend-pill legend-max">Meiste Abschnitte</span></div>
  <div class="grid" id="lineupGrid"></div>
  <div style="margin-top:10px"><div class="small"><b>Wechselspieler</b> (automatisch)</div><div id="bench" class="bench small"></div></div>
  <div class="lineup-actions"><button class="secondary" onclick="copyPreviousLineup()">↻ Vorherige Aufstellung</button><button class="secondary" onclick="clearLineup()">Aufstellung leeren</button></div>
@@ -255,7 +262,15 @@ function lineupTap(field,slot){
  else quickSwap={benchPlayer:'',field,slot};
  renderLineups();
 }
-function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount(),req=requiredPlayersPerField();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden ${req>=9?'dense-lineup':''}" id="fieldBody${f}">`+Array.from({length:req},(_,i)=>{const selected=quickSwap.field===f&&quickSwap.slot===i;return `<div class="swap-row ${selected?'is-selected':''}"><label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label><button type="button" class="editbtn swap-trigger" onclick="lineupTap(${f},${i})" aria-label="Spieler tauschen">↔</button></div>`}).join('')+`</div>`;grid.appendChild(div)}
+
+function lineupUsageClasses(){
+ const stats=playerStats(),map=new Map(stats.map(s=>[s.name,s.sections]));
+ const hasPlayed=stats.some(s=>s.sections>0);
+ if(!hasPlayed)return {map,min:null,max:null};
+ const vals=stats.map(s=>s.sections),min=Math.min(...vals),max=Math.max(...vals);
+ return {map,min,max};
+}
+function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount(),req=requiredPlayersPerField(),usage=lineupUsageClasses();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden ${req>=9?'dense-lineup':''}" id="fieldBody${f}">`+Array.from({length:req},(_,i)=>{const selected=quickSwap.field===f&&quickSwap.slot===i,val=state.lineups[f][i]||'';let usageClass='';if(val&&usage.min!==null&&usage.min!==usage.max){const c=usage.map.get(val);if(c===usage.min)usageClass='stat-min';else if(c===usage.max)usageClass='stat-max'}return `<div class="swap-row ${usageClass} ${selected?'is-selected':''}"><label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label><button type="button" class="editbtn swap-trigger" onclick="lineupTap(${f},${i})" aria-label="Spieler tauschen">↔</button></div>`}).join('')+`</div>`;grid.appendChild(div)}
  const used=new Set(state.lineups.slice(0,n).flatMap(a=>(a||[]).slice(0,req)).filter(Boolean));const pb=previousBenchSet();const bench=state.roster.filter(x=>!used.has(x));document.getElementById('bench').innerHTML=state.roster.length?bench.map(x=>`<button type="button" class="pill swap-bench ${pb.has(x)?'prevbench':''} ${quickSwap.benchPlayer===x?'is-selected':''}" onclick="benchTap('${escJs(x)}')">${pb.has(x)?'★ ':''}${esc(x)}</button>`).join('')||'<span class="pill">Keine Wechselspieler</span>':'Bitte zuerst Kader eingeben.';quickSwapHint();applyFolds();
 }
 function setLineup(f,i,name){clearQuickSwap();if(name){const req=requiredPlayersPerField();for(let ff=0;ff<activeFieldCount();ff++)for(let ii=0;ii<req;ii++)if(!(ff===f&&ii===i)&&state.lineups[ff][ii]===name){alert(name+' ist in diesem Abschnitt bereits auf Feld '+(ff+1)+' eingeteilt.');renderLineups();return}}state.lineups[f][i]=name;save();renderLineups()}
