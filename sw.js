@@ -1,4 +1,4 @@
-const CACHE_NAME = 'u13-live-v1';
+const CACHE_NAME = 'u13-live-v2';
 const APP_SHELL = [
   './',
   './index.html',
