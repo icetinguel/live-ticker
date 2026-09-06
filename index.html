@@ -7,6 +7,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="U13 Live">
 <meta name="theme-color" content="#0b5e3c">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>U13 Förderliga Live</title>
 <style>
 :root{--green:#0b5e3c;--green2:#12804f;--bg:#f4f6f7;--card:#fff;--text:#17201b;--muted:#69736e;--red:#c0392b;--yellow:#c88a00;--line:#dce2df}
@@ -129,5 +134,13 @@ function newMatch(){if(confirm("Neues Spiel beginnen? Die aktuelle Erfassung wir
 function shareResult(){let w=state.history.filter(x=>x.o.includes("Sieg")).length,l=state.history.filter(x=>x.o.includes("Niederlage")).length,d=state.history.filter(x=>x.o.includes("Unentschieden")).length;let t=`U13 Förderliga${state.opponent?" vs. "+state.opponent:""}: ${w}:${l} (${w} Siege, ${d} Remis, ${l} Niederlagen)`;if(navigator.share)navigator.share({title:"U13 Förderliga",text:t});else navigator.clipboard?.writeText(t).then(()=>alert("Ergebnis kopiert."))}
 document.getElementById("opponent").addEventListener("input",e=>{state.opponent=e.target.value;save()});
 load();update();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  });
+}
 </script>
 </body></html>
