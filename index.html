@@ -31,8 +31,10 @@ main{max-width:620px;margin:auto;padding:12px 12px 90px}
 button{border:0;border-radius:12px;min-height:44px;font-size:16px;font-weight:800;padding:8px 12px;background:#e8eeeb;color:var(--green)}
 button:active{transform:scale(.97)} .plus{background:var(--green);color:white;width:48px}.minus{width:48px}
 .result{margin-top:10px;text-align:center;padding:8px;border-radius:10px;font-weight:800}.win{background:#e3f3e9;color:var(--green)}.draw{background:#fff2cf;color:#8a6200}.loss{background:#fbe5e2;color:var(--red)}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}.controls button{background:var(--green);color:#fff}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.controls button{background:#e8eeeb;color:var(--green)}
 .secondary{background:#e8eeeb!important;color:var(--green)!important}
+button:disabled{opacity:.55;transform:none;cursor:default}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:center}th{color:var(--muted);font-size:11px;text-transform:uppercase}
 .bottom{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid var(--line);padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:8px}.bottom button{min-width:31%;font-size:13px}
 input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:16px;margin-top:5px}
@@ -47,7 +49,7 @@ input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;fo
   <div class="score" id="overall">0 : 0</div>
   <div class="status" id="counts">0 Siege · 0 Unentschieden · 0 Niederlagen</div>
   <div class="progress"><div class="bar" id="bar"></div></div>
-  <div class="small" style="text-align:center" id="round">Spiel 1 von 6 · Abschnitt noch offen</div>
+  <div class="small" style="text-align:center" id="round">Abschnitt 1 von 6 · Abschnitt noch offen</div>
 </div>
 
 <div class="card">
@@ -77,14 +79,14 @@ input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;fo
   </div>
 </div>
 <div class="controls" style="margin-top:12px">
-<button onclick="finishRound()">✓ Abschnitt abschließen</button>
+<button id="finishBtn" class="secondary" onclick="finishRound()">✓ Abschnitt abschließen</button>
 <button class="secondary" onclick="resetRound()">↺ Abschnitt zurücksetzen</button>
 </div>
 </div>
 
 <div class="card">
 <div class="section">Bisherige Wertung</div>
-<table><thead><tr><th>Spiel</th><th>Feld 1</th><th>Feld 2</th><th>Wertung</th></tr></thead>
+<table><thead><tr><th>Abschnitt</th><th>Feld 1</th><th>Feld 2</th><th>Wertung</th></tr></thead>
 <tbody id="history"></tbody></table>
 </div>
 
@@ -110,7 +112,10 @@ function update(){
   document.getElementById("score1").textContent=state.fields[0].own+" : "+state.fields[0].opp;
   document.getElementById("score2").textContent=state.fields[1].own+" : "+state.fields[1].opp;
   [0,1].forEach(i=>{let o=outcome(state.fields[i]),e=document.getElementById("result"+i);e.textContent=o==="Unentschieden"&&state.fields[i].own===0&&state.fields[i].opp===0?"noch offen":o;e.className="result "+(o==="Sieg"?"win":o==="Niederlage"?"loss":"draw")});
-  document.getElementById("sectionTitle").textContent=`Abschnitt ${Math.min(state.round+1,6)} · ${state.round*12}–${(state.round+1)*12} Minuten`;
+  document.getElementById("sectionTitle").textContent=state.round<6?`Abschnitt ${state.round+1} · ${state.round*12}–${(state.round+1)*12} Minuten`:"Spiel beendet · 72 Minuten";
+  const finishBtn=document.getElementById("finishBtn");
+  finishBtn.disabled=state.round>=6;
+  finishBtn.textContent=state.round>=6?"✓ Spiel beendet":"✓ Abschnitt abschließen";
   const allOutcomes=state.history.flatMap(x=>{
     if(x.o1&&x.o2)return [x.o1,x.o2];
     const parse=s=>{const [a,b]=String(s||"0:0").split(":").map(Number);return a>b?"Sieg":a<b?"Niederlage":"Unentschieden"};
@@ -119,7 +124,7 @@ function update(){
   const w=allOutcomes.filter(o=>o==="Sieg").length,l=allOutcomes.filter(o=>o==="Niederlage").length,d=allOutcomes.filter(o=>o==="Unentschieden").length;
   document.getElementById("overall").textContent=w+" : "+l;document.getElementById("counts").textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`;
   document.getElementById("bar").style.width=(state.history.length/6*100)+"%";
-  document.getElementById("round").textContent=state.round<6?`Spiel ${state.round+1} von 6 · ${state.history.length*2} von 12 Einzelspielen erfasst`:"Spiel beendet";
+  document.getElementById("round").textContent=state.round<6?`Abschnitt ${state.round+1} von 6 · ${state.history.length*2} von 12 Einzelspielen erfasst`:"Spiel beendet";
   document.getElementById("opponent").value=state.opponent||"";
   const tbody=document.getElementById("history");tbody.innerHTML="";
   state.history.forEach((x,i)=>{let tr=document.createElement("tr");tr.innerHTML=`<td>${i+1}</td><td>${x.s1}</td><td>${x.s2}</td><td>${x.o}</td>`;tbody.appendChild(tr)});
