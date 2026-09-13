@@ -71,7 +71,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .lineup-stat-legend{margin:4px 0 8px}
 
 
-/* iPad / Tablet-Optimierung v7.14 */
+/* iPad / Tablet-Optimierung v7.15 */
 @media (min-width:768px){
   header{padding-left:24px;padding-right:24px}
   header h1{font-size:25px}
@@ -119,11 +119,26 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
   .lineup-actions{grid-template-columns:1fr 1fr}
 }
 
+
+/* v7.15 persistent roster */
+.roster715-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
+.roster715-player{display:flex;align-items:center;gap:7px;border:1px solid #dce3df;border-radius:12px;padding:9px;background:#fff;font-weight:800}
+.roster715-player.off{opacity:.42;text-decoration:line-through;background:#eef1ef}
+.roster715-player.ts:after{content:"TS";margin-left:auto;font-size:10px;border-radius:8px;padding:3px 6px;background:#075e3d;color:#fff}
+.roster715-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.roster715-count{font-weight:900;color:#075e3d}
+.roster715-actions{display:flex;gap:7px;margin-top:8px}.roster715-actions button{flex:1}
+@media(min-width:768px){.roster715-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.14</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.15</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
+<div class="card" id="roster715Card">
+ <div class="roster715-head"><div><b>Spielkader</b><div class="small">Fehlende Spieler einfach antippen.</div></div><div class="roster715-count" id="roster715Count"></div></div>
+ <div class="roster715-list" id="roster715List"></div>
+ <div class="roster715-actions"><button type="button" onclick="roster715All(true)">Alle</button><button type="button" onclick="roster715All(false)">Keine</button></div>
+</div>
+
 <div class="card">
  <div class="section">Spielmodus</div>
  <div class="modebox"><button id="modeFoerder" onclick="setMode('foerder')">Förderliga</button><button id="modeNormal" onclick="setMode('normal')">Normales Spiel</button></div>
@@ -474,5 +489,16 @@ document.getElementById('opponent').addEventListener('input',e=>{state.opponent=
 document.getElementById('opponent').addEventListener('blur',()=>{if(state.opponent&&state.matchDate){matchInfoOpen=false;updateMatchInfo()}});document.getElementById('matchDate').addEventListener('change',e=>{state.matchDate=e.target.value;if(state.opponent&&state.matchDate)matchInfoOpen=false;save();updateMatchInfo()});document.getElementById('sectionsSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.sections;alert('Abschnittszahl kann nach Spielbeginn nicht mehr geändert werden.');return}state.sections=+e.target.value;update()});document.getElementById('foerderDurationInput').addEventListener('change',e=>{if(state.history.length){e.target.value=state.duration;alert('Abschnittslänge kann nach Spielbeginn nicht mehr geändert werden.');return}state.duration=Math.min(90,Math.max(1,+e.target.value||12));update()});document.getElementById('durationInput').addEventListener('change',e=>{if(state.history.length){e.target.value=state.duration;alert('Abschnittslänge kann nach Spielbeginn nicht mehr geändert werden.');return}state.duration=Math.min(90,Math.max(1,+e.target.value||1));update()});document.getElementById('fieldsSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.numFields;alert('Feldanzahl kann nach Spielbeginn nicht mehr geändert werden.');return}state.numFields=+e.target.value;update()});document.getElementById('playersPerFieldSelect').addEventListener('change',e=>{if(state.history.length){e.target.value=state.playersPerField;alert('Startformation kann nach Spielbeginn nicht mehr geändert werden.');return}state.playersPerField=+e.target.value;state.lineups=state.lineups.map(a=>Array.from({length:11},(_,i)=>i<state.playersPerField?(a?.[i]||''):''));buildDefaultLineup();update()});
 load();update();
 </script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error))}</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error))}
+const ROSTER715_KEY="fcg_u13_roster_v1";
+const ROSTER715_DEFAULT=[
+{n:1,name:"Lena",ts:true},{n:18,name:"Melih",ts:true},{n:2,name:"Jakob"},{n:4,name:"Ramin"},{n:6,name:"Moritz"},{n:8,name:"Louis"},{n:10,name:"Mert"},{n:12,name:"Teodor"},{n:14,name:"Malik"},{n:16,name:"Theo"},{n:20,name:"Anton"},{n:24,name:"Rafael"},{n:28,name:"Leon"},{n:30,name:"Emir"},{n:34,name:"Lukas"},{n:42,name:"Max"},{n:44,name:"Milian"},{n:66,name:"Sebastian"},{n:70,name:"Noah"},{n:80,name:"Diar"},{n:90,name:"Lean"}];
+let roster715;
+function roster715Load(){try{roster715=JSON.parse(localStorage.getItem(ROSTER715_KEY)||"null")}catch(e){};if(!roster715||!Array.isArray(roster715.players)){roster715={players:ROSTER715_DEFAULT,active:Object.fromEntries(ROSTER715_DEFAULT.map(p=>[p.n,true]))};roster715Save()}}
+function roster715Save(){localStorage.setItem(ROSTER715_KEY,JSON.stringify(roster715))}
+function roster715Render(){const b=document.getElementById("roster715List");if(!b)return;b.innerHTML="";let c=0;roster715.players.forEach(p=>{const on=roster715.active[p.n]!==false;if(on)c++;const d=document.createElement("div");d.className="roster715-player "+(on?"":"off")+" "+(p.ts?"ts":"");d.innerHTML=`<b>${p.n}</b><span>${p.name}</span>`;d.onclick=()=>{roster715.active[p.n]=!on;roster715Save();roster715Render();roster715Sync()};b.appendChild(d)});document.getElementById("roster715Count").textContent=`${c} / ${roster715.players.length}`;}
+function roster715All(v){roster715.players.forEach(p=>roster715.active[p.n]=v);roster715Save();roster715Render();roster715Sync()}
+function roster715Sync(){try{if(typeof state!=="undefined"){state.persistentRoster=roster715.players;state.matchRoster=roster715.players.filter(p=>roster715.active[p.n]!==false).map(p=>p.name);if(typeof save==="function")save()}}catch(e){}}
+roster715Load();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{roster715Render();roster715Sync()});else{roster715Render();roster715Sync()}
+</script>
 </body></html>
