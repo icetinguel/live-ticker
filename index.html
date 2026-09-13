@@ -71,7 +71,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .lineup-stat-legend{margin:4px 0 8px}
 
 
-/* iPad / Tablet-Optimierung v7.17 */
+/* iPad / Tablet-Optimierung v7.18 */
 @media (min-width:768px){
   header{padding-left:24px;padding-right:24px}
   header h1{font-size:25px}
@@ -120,7 +120,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 }
 
 
-/* v7.17 persistent roster */
+/* v7.18 persistent roster */
 .roster715-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
 .roster715-player{display:flex;align-items:center;gap:7px;border:1px solid #dce3df;border-radius:12px;padding:9px;background:#fff;font-weight:800}
 .roster715-player.off{opacity:.42;text-decoration:line-through;background:#eef1ef}
@@ -129,14 +129,14 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .roster715-actions{display:flex;gap:7px;margin-top:8px}.roster715-actions button{flex:1}
 @media(min-width:768px){.roster715-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
-/* v7.17 */
+/* v7.18 */
 .roster716-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:transparent!important;color:inherit!important;padding:0!important;min-height:auto!important}
 .roster716-body.collapsed{display:none}
 .field-ts716{font-size:11px;color:#68736d;text-align:center;font-weight:800;margin-top:-2px;margin-bottom:4px}
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.17</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.18</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
 <div class="card">
  <div class="section">Spielmodus</div>
@@ -155,23 +155,37 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  </div>
 </div>
 
-<div class="card" id="roster715Card">
- <button class="foldhead" type="button" onclick="toggleFold('roster')" aria-controls="rosterBody" id="rosterFoldBtn" aria-expanded="false">
-   <span class="foldtitle">Spielkader</span>
-   <span class="foldsummary" id="rosterSummary">21 / 21 Spieler</span>
-   <span class="foldarrow" id="rosterArrow">⌄</span>
+<div class="card">
+  <div class="biglabel" id="overallLabel">LIVE Förderliga-Ergebnis</div><div class="score" id="overall">0 : 0</div><div class="status" id="counts"></div><div class="small" style="text-align:center;margin-top:4px" id="securedScore"></div>
+  <div class="progress"><div class="bar" id="bar"></div></div><div class="small" style="text-align:center" id="round"></div>
+</div>
+
+<div class="card compactcard">
+ <button class="foldhead" type="button" onclick="toggleMatchInfo()" aria-controls="matchInfoBody" id="matchInfoBtn" aria-expanded="true">
+  <span class="foldtitle">Spieldaten</span><span class="foldsummary" id="matchInfoSummary">Gegner & Datum eingeben</span><span class="foldarrow" id="matchInfoArrow">⌃</span>
  </button>
+ <div id="matchInfoBody" class="foldbody">
+  <div class="formgrid"><label class="small">Gegner<input id="opponent" placeholder="z. B. TSV Nördlingen"></label><label class="small">Datum<input id="matchDate" type="date"></label></div>
+ </div>
+</div>
+
+<div class="card compactcard" id="roster715Card">
+ <button class="foldhead" type="button" onclick="toggleFold('roster')" aria-controls="rosterBody" id="rosterFoldBtn" aria-expanded="false"><span class="foldtitle">Spielkader</span><span class="foldsummary" id="rosterSummary">21 / 21 Spieler</span><span class="foldarrow" id="rosterArrow">⌄</span></button>
  <div id="rosterBody" class="foldbody hidden">
-   <div class="small">Fehlende Spieler für dieses Spiel einfach antippen. Der Stammkader bleibt gespeichert.</div>
-   <div class="roster715-list" id="roster715List"></div>
-   <div class="roster715-actions">
-     <button type="button" onclick="roster715All(true)">Alle</button>
-     <button type="button" class="secondary" onclick="roster715All(false)">Keine</button>
-   </div>
-   <div id="rosterInfo" class="small" style="margin-top:8px"></div>
-   <textarea id="rosterInput" class="hidden"></textarea>
-   <select id="gk1Select" class="hidden"></select>
-   <select id="gk2Select" class="hidden"></select>
+  <div class="small">Fehlende Spieler für dieses Spiel einfach antippen. Der Stammkader bleibt dauerhaft gespeichert.</div>
+  <div class="roster715-list" id="roster715List"></div>
+  <div class="roster715-actions">
+   <button type="button" onclick="roster715All(true)">Alle</button>
+   <button type="button" class="secondary" onclick="roster715All(false)">Keine</button>
+  </div>
+  <div id="rosterInfo" class="small" style="margin-top:8px"></div>
+
+  <!-- Kompatibilität mit der bestehenden v7.16-Logik; nicht sichtbar -->
+  <textarea id="rosterInput" class="hidden" aria-hidden="true"></textarea>
+  <div class="hidden" aria-hidden="true">
+   <select id="gk1Select"></select>
+   <select id="gk2Select"></select>
+  </div>
  </div>
 </div>
 
@@ -377,7 +391,7 @@ function lineupUsageClasses(){
  const vals=stats.map(s=>s.sections),min=Math.min(...vals),max=Math.max(...vals);
  return {map,min,max};
 }
-function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount(),req=requiredPlayersPerField(),usage=lineupUsageClasses();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}${state.goalkeepers[f]?` · TS ${esc(state.goalkeepers[f])}`:''}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden ${req>=9?'dense-lineup':''}" id="fieldBody${f}">`+Array.from({length:req},(_,i)=>{const selected=quickSwap.field===f&&quickSwap.slot===i,val=state.lineups[f][i]||'';let usageClass='';if(val&&usage.min!==null&&usage.min!==usage.max){const c=usage.map.get(val);if(c===usage.min)usageClass='stat-min';else if(c===usage.max)usageClass='stat-max'}return `<div class="swap-row ${usageClass} ${selected?'is-selected':''}"><label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label><button type="button" class="editbtn swap-trigger" onclick="lineupTap(${f},${i})" aria-label="Spieler tauschen">↔</button></div>`}).join('')+`</div>`;grid.appendChild(div)}
+function renderLineups(){const grid=document.getElementById('lineupGrid');grid.innerHTML='';const n=activeFieldCount(),req=requiredPlayersPerField(),usage=lineupUsageClasses();for(let f=0;f<n;f++){const div=document.createElement('div');div.className='fieldfold';div.innerHTML=`<button class="foldhead" type="button" onclick="toggleFold('field${f+1}')" aria-controls="fieldBody${f}" id="fieldFoldBtn${f}" aria-expanded="false"><span class="foldtitle">Feld ${f+1}${state.goalkeepers[f]?` · TS ${esc(state.goalkeepers[f])}`:""}</span><span class="foldsummary">${lineupSummary(f)}</span><span class="foldarrow" id="fieldArrow${f}">⌄</span></button><div class="foldbody hidden ${req>=9?'dense-lineup':''}" id="fieldBody${f}">`+Array.from({length:req},(_,i)=>{const selected=quickSwap.field===f&&quickSwap.slot===i,val=state.lineups[f][i]||'';let usageClass='';if(val&&usage.min!==null&&usage.min!==usage.max){const c=usage.map.get(val);if(c===usage.min)usageClass='stat-min';else if(c===usage.max)usageClass='stat-max'}return `<div class="swap-row ${usageClass} ${selected?'is-selected':''}"><label class="slot"><span>${i===0?'🥅 TS':'Spieler '+i}</span><select onchange="setLineup(${f},${i},this.value)">${rosterOptions(state.lineups[f][i])}</select></label><button type="button" class="editbtn swap-trigger" onclick="lineupTap(${f},${i})" aria-label="Spieler tauschen">↔</button></div>`}).join('')+`</div>`;grid.appendChild(div)}
  const used=new Set(state.lineups.slice(0,n).flatMap(a=>(a||[]).slice(0,req)).filter(Boolean));const pb=previousBenchSet();const bench=state.roster.filter(x=>!used.has(x));document.getElementById('bench').innerHTML=state.roster.length?bench.map(x=>`<button type="button" class="pill swap-bench ${pb.has(x)?'prevbench':''} ${quickSwap.benchPlayer===x?'is-selected':''}" onclick="benchTap('${escJs(x)}')">${pb.has(x)?'★ ':''}${esc(x)}</button>`).join('')||'<span class="pill">Keine Wechselspieler</span>':'Bitte zuerst Kader eingeben.';quickSwapHint();applyFolds();
 }
 function setLineup(f,i,name){clearQuickSwap();if(name){const req=requiredPlayersPerField();for(let ff=0;ff<activeFieldCount();ff++)for(let ii=0;ii<req;ii++)if(!(ff===f&&ii===i)&&state.lineups[ff][ii]===name){alert(name+' ist in diesem Abschnitt bereits auf Feld '+(ff+1)+' eingeteilt.');renderLineups();return}}state.lineups[f][i]=name;if(i===0)state.goalkeepers[f]=name;save();renderLineups()}
@@ -491,46 +505,60 @@ function roster715Render(){
  const b=document.getElementById("roster715List");if(!b)return;
  b.innerHTML="";let c=0;
  roster715.players.forEach(p=>{
-   const on=roster715.active[p.n]!==false;if(on)c++;
+   const on=roster715.active[String(p.n)]!==false;
+   if(on)c++;
    const d=document.createElement("button");
    d.type="button";
    d.className="roster715-player "+(on?"":"off")+" "+(p.ts?"ts":"");
    d.innerHTML=`<b>${p.n}</b><span>${p.name}</span>`;
-   d.onclick=()=>{roster715.active[p.n]=!on;roster715Save();roster715Render();roster715Sync()};
-   b.appendChild(d)
+   d.onclick=()=>{
+     roster715.active[String(p.n)]=!on;
+     roster715Save();
+     roster715Render();
+     roster715Sync();
+   };
+   b.appendChild(d);
  });
- const summary=document.getElementById("rosterSummary");
- if(summary)summary.textContent=`${c} / ${roster715.players.length} Spieler`;
+ const sum=document.getElementById("rosterSummary");
+ if(sum)sum.textContent=`${c} / ${roster715.players.length} Spieler`;
  const info=document.getElementById("rosterInfo");
  if(info)info.textContent=`Spielkader: ${c} von ${roster715.players.length}`;
 }
-function roster715All(v){roster715.players.forEach(p=>roster715.active[p.n]=v);roster715Save();roster715Render();roster715Sync()}
+function roster715All(v){
+ roster715.players.forEach(p=>roster715.active[String(p.n)]=v);
+ roster715Save();
+ roster715Render();
+ roster715Sync();
+}
 
 function roster715Sync(){
-  try{
-    const active=roster715.players.filter(p=>roster715.active[p.n]!==false);
-    const names=active.map(p=>p.name);
-    if(typeof state!=="undefined"&&state){
-      const oldRoster=Array.isArray(state.roster)?state.roster.slice():[];
-      state.roster=names;
+ try{
+   const active=roster715.players.filter(p=>roster715.active[String(p.n)]!==false);
+   const names=active.map(p=>p.name);
+   if(typeof state!=="undefined"&&state){
+     state.roster=names;
 
-      for(let f=0;f<2;f++){
-        state.lineups[f]=Array.from({length:11},(_,i)=>{
-          const current=state.lineups[f]?.[i]||"";
-          return names.includes(current)?current:"";
-        });
-      }
+     // Spieler, die für heute gestrichen wurden, aus der aktuellen Aufstellung entfernen.
+     for(let f=0;f<2;f++){
+       for(let i=0;i<11;i++){
+         if(state.lineups[f][i] && !names.includes(state.lineups[f][i])) state.lineups[f][i]="";
+       }
+     }
 
-      const keepers=active.filter(p=>p.ts).map(p=>p.name);
-      if(!names.includes(state.goalkeepers[0])) state.goalkeepers[0]=keepers[0]||"";
-      if(!names.includes(state.goalkeepers[1]) || state.goalkeepers[1]===state.goalkeepers[0])
-        state.goalkeepers[1]=keepers.find(x=>x!==state.goalkeepers[0])||"";
+     // TS-Zuordnung beibehalten; falls ungültig, Lena/Melih automatisch sinnvoll verteilen.
+     const keepers=active.filter(p=>p.ts).map(p=>p.name);
+     if(!names.includes(state.goalkeepers[0])) state.goalkeepers[0]=keepers[0]||"";
+     if(!names.includes(state.goalkeepers[1]) || state.goalkeepers[1]===state.goalkeepers[0])
+       state.goalkeepers[1]=keepers.find(x=>x!==state.goalkeepers[0])||"";
 
-      if(oldRoster.length===0 && names.length && state.history.length===0) buildDefaultLineup();
-      if(typeof save==="function") save();
-      if(typeof update==="function") update();
-    }
-  }catch(e){console.error("Spielkader konnte nicht übernommen werden",e)}
+     // TS-Slots passend setzen, ohne die restliche Aufstellung ungefragt neu zu bauen.
+     if(state.goalkeepers[0] && names.includes(state.goalkeepers[0])) state.lineups[0][0]=state.goalkeepers[0];
+     if(activeFieldCount()>1 && state.goalkeepers[1] && names.includes(state.goalkeepers[1])) state.lineups[1][0]=state.goalkeepers[1];
+
+     save();
+     update();
+   }
+ }catch(e){console.error("Spielkader konnte nicht übernommen werden",e)}
 }
 
 
