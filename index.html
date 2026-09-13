@@ -71,7 +71,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .lineup-stat-legend{margin:4px 0 8px}
 
 
-/* iPad / Tablet-Optimierung v7.15 */
+/* iPad / Tablet-Optimierung v7.16 */
 @media (min-width:768px){
   header{padding-left:24px;padding-right:24px}
   header h1{font-size:25px}
@@ -120,7 +120,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 }
 
 
-/* v7.15 persistent roster */
+/* v7.16 persistent roster */
 .roster715-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
 .roster715-player{display:flex;align-items:center;gap:7px;border:1px solid #dce3df;border-radius:12px;padding:9px;background:#fff;font-weight:800}
 .roster715-player.off{opacity:.42;text-decoration:line-through;background:#eef1ef}
@@ -128,15 +128,25 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .roster715-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.roster715-count{font-weight:900;color:#075e3d}
 .roster715-actions{display:flex;gap:7px;margin-top:8px}.roster715-actions button{flex:1}
 @media(min-width:768px){.roster715-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* v7.16 */
+.roster716-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:transparent!important;color:inherit!important;padding:0!important;min-height:auto!important}
+.roster716-body.collapsed{display:none}
+.field-ts716{font-size:11px;color:#68736d;text-align:center;font-weight:800;margin-top:-2px;margin-bottom:4px}
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.15</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.16</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
 <div class="card" id="roster715Card">
- <div class="roster715-head"><div><b>Spielkader</b><div class="small">Fehlende Spieler einfach antippen.</div></div><div class="roster715-count" id="roster715Count"></div></div>
- <div class="roster715-list" id="roster715List"></div>
- <div class="roster715-actions"><button type="button" onclick="roster715All(true)">Alle</button><button type="button" onclick="roster715All(false)">Keine</button></div>
+ <button type="button" class="roster716-toggle" onclick="roster716Toggle()">
+   <div style="text-align:left"><b>Spielkader</b><div class="small">Fehlende Spieler einfach antippen.</div></div>
+   <div><span class="roster715-count" id="roster715Count"></span> <span id="roster716Chevron">▾</span></div>
+ </button>
+ <div class="roster716-body" id="roster716Body">
+   <div class="roster715-list" id="roster715List"></div>
+   <div class="roster715-actions"><button type="button" onclick="event.stopPropagation();roster715All(true)">Alle</button><button type="button" onclick="event.stopPropagation();roster715All(false)">Keine</button></div>
+ </div>
 </div>
 
 <div class="card">
@@ -496,9 +506,69 @@ const ROSTER715_DEFAULT=[
 let roster715;
 function roster715Load(){try{roster715=JSON.parse(localStorage.getItem(ROSTER715_KEY)||"null")}catch(e){};if(!roster715||!Array.isArray(roster715.players)){roster715={players:ROSTER715_DEFAULT,active:Object.fromEntries(ROSTER715_DEFAULT.map(p=>[p.n,true]))};roster715Save()}}
 function roster715Save(){localStorage.setItem(ROSTER715_KEY,JSON.stringify(roster715))}
-function roster715Render(){const b=document.getElementById("roster715List");if(!b)return;b.innerHTML="";let c=0;roster715.players.forEach(p=>{const on=roster715.active[p.n]!==false;if(on)c++;const d=document.createElement("div");d.className="roster715-player "+(on?"":"off")+" "+(p.ts?"ts":"");d.innerHTML=`<b>${p.n}</b><span>${p.name}</span>`;d.onclick=()=>{roster715.active[p.n]=!on;roster715Save();roster715Render();roster715Sync()};b.appendChild(d)});document.getElementById("roster715Count").textContent=`${c} / ${roster715.players.length}`;}
-function roster715All(v){roster715.players.forEach(p=>roster715.active[p.n]=v);roster715Save();roster715Render();roster715Sync()}
-function roster715Sync(){try{if(typeof state!=="undefined"){state.persistentRoster=roster715.players;state.matchRoster=roster715.players.filter(p=>roster715.active[p.n]!==false).map(p=>p.name);if(typeof save==="function")save()}}catch(e){}}
-roster715Load();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{roster715Render();roster715Sync()});else{roster715Render();roster715Sync()}
+function roster715Render(){const b=document.getElementById("roster715List");if(!b)return;b.innerHTML="";let c=0;roster715.players.forEach(p=>{const on=roster715.active[p.n]!==false;if(on)c++;const d=document.createElement("div");d.className="roster715-player "+(on?"":"off")+" "+(p.ts?"ts":"");d.innerHTML=`<b>${p.n}</b><span>${p.name}</span>`;d.onclick=()=>{roster715.active[p.n]=!on;roster715Save();roster715Render();roster715Sync();roster716UpdateKeeperLabels()};b.appendChild(d)});document.getElementById("roster715Count").textContent=`${c} / ${roster715.players.length}`;}
+function roster715All(v){roster715.players.forEach(p=>roster715.active[p.n]=v);roster715Save();roster715Render();roster715Sync();roster716UpdateKeeperLabels()}
+
+function roster715Sync(){
+  try{
+    const active=roster715.players.filter(p=>roster715.active[p.n]!==false);
+    if(typeof state!=="undefined"&&state){
+      state.persistentRoster=roster715.players;
+      state.matchRoster=active.map(p=>({number:p.n,name:p.name,ts:!!p.ts}));
+      // Bridge into common existing roster/squad containers used by prior versions.
+      if(Array.isArray(state.squad)) state.squad=active.map(p=>({number:p.n,name:p.name,ts:!!p.ts}));
+      if(Array.isArray(state.players)) state.players=active.map(p=>({number:p.n,name:p.name,ts:!!p.ts}));
+      if(Array.isArray(state.roster)) state.roster=active.map(p=>({number:p.n,name:p.name,ts:!!p.ts}));
+      if(typeof save==="function") save();
+    }
+    roster716ApplyToExistingUI(active);
+    roster716UpdateKeeperLabels();
+  }catch(e){}
+}
+function roster716ApplyToExistingUI(active){
+  const names=new Set(active.map(p=>p.name));
+  // Hide any existing player chips/list rows that expose a recognizable player name
+  document.querySelectorAll("[data-player], .player, .player-chip, .squad-player, .bench-player").forEach(el=>{
+    const n=(el.dataset&&el.dataset.player)?el.dataset.player:el.textContent.trim();
+    if(n && roster715.players.some(p=>n.includes(p.name))){
+      const hit=roster715.players.find(p=>n.includes(p.name));
+      el.style.display=names.has(hit.name)?"":"none";
+    }
+  });
+}
+function roster716Toggle(){
+  const b=document.getElementById("roster716Body"), c=document.getElementById("roster716Chevron");
+  if(!b)return;
+  b.classList.toggle("collapsed");
+  if(c)c.textContent=b.classList.contains("collapsed")?"▸":"▾";
+}
+function roster716FindKeeper(fieldNo){
+  try{
+    if(typeof state!=="undefined"&&state){
+      // common structures: field1/field2 arrays or lineup objects
+      const candidates=[];
+      const keys=fieldNo===1?["field1","team1","lineup1"]:["field2","team2","lineup2"];
+      keys.forEach(k=>{if(Array.isArray(state[k]))candidates.push(...state[k]);});
+      if(state.lineup){
+        const arr=state.lineup[fieldNo===1?"field1":"field2"];
+        if(Array.isArray(arr))candidates.push(...arr);
+      }
+      for(const x of candidates){
+        const name=typeof x==="string"?x:(x&&x.name)||"";
+        const p=roster715.players.find(p=>p.name===name);
+        if(p&&p.ts)return p.name;
+      }
+    }
+  }catch(e){}
+  return "";
+}
+function roster716UpdateKeeperLabels(){
+  const a=document.getElementById("field1Ts716"), b=document.getElementById("field2Ts716");
+  if(a){const n=roster716FindKeeper(1);a.textContent=n?`TS: ${n}`:"";}
+  if(b){const n=roster716FindKeeper(2);b.textContent=n?`TS: ${n}`:"";}
+}
+roster715Load();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{roster715Render();roster715Sync();roster716UpdateKeeperLabels()});else{roster715Render();roster715Sync();roster716UpdateKeeperLabels()}
+
+document.addEventListener("click",()=>setTimeout(roster716UpdateKeeperLabels,50),true);
 </script>
 </body></html>
