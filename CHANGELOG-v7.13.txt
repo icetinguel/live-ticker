@@ -1,0 +1,10 @@
+FCG Match Live v7.13 – Live-Wertung + Abschnitts-Sicherheitsprüfung
+
+- Oberes Ergebnis zählt jetzt LIVE auch den aktuell laufenden Abschnitt mit.
+- Darunter bleibt der bereits abgeschlossene/gesicherte Stand sichtbar.
+- Nach JEDEM Abschnitt strenge Prüfung: History und Abschnittszähler müssen exakt +1 fortschreiten.
+- Der neue Abschnitt wird erst auf 0:0 vorbereitet, nachdem der abgeschlossene Stand gespeichert UND zurückgelesen wurde.
+- Zweite Speicherprüfung nach Vorbereitung des Folgeabschnitts; Abschnitt 5 muss damit zwingend zu Abschnitt 6 führen.
+- Bei Inkonsistenz oder Speicherfehler automatische Rückkehr zum vorherigen sicheren Stand statt Reset/Überspringen.
+- Startprüfung erkennt widersprüchliche Fortschrittsstände und bietet eine bessere Sicherung zur Wiederherstellung an.
+- Service-Worker-Cache auf v7.13 erhöht.

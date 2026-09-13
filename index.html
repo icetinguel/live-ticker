@@ -72,7 +72,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live</h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.13</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
 <div class="card">
  <div class="section">Spielmodus</div>
@@ -92,7 +92,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </div>
 
 <div class="card">
-  <div class="biglabel" id="overallLabel">Aktuelles Förderliga-Ergebnis</div><div class="score" id="overall">0 : 0</div><div class="status" id="counts"></div>
+  <div class="biglabel" id="overallLabel">LIVE Förderliga-Ergebnis</div><div class="score" id="overall">0 : 0</div><div class="status" id="counts"></div><div class="small" style="text-align:center;margin-top:4px" id="securedScore"></div>
   <div class="progress"><div class="bar" id="bar"></div></div><div class="small" style="text-align:center" id="round"></div>
 </div>
 
@@ -153,7 +153,8 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 
 <div class="card">
  <div class="section">Speichern & Export</div><div class="controls"><button onclick="archiveMatch()">💾 Spiel archivieren</button><button onclick="exportCurrentCSV()">⬇︎ Excel / Numbers</button></div>
- <div class="small" style="margin-top:8px">Export als CSV mit Ergebnissen, Aufstellungen, Spielminuten und Torschützen.</div>
+ <button class="secondary" style="width:100%;margin-top:8px" onclick="restoreSafetyBackup()">🛟 Letzte Sicherung wiederherstellen</button>
+ <div class="small" style="margin-top:8px">Export als CSV mit Ergebnissen, Aufstellungen, Spielminuten und Torschützen. Der Spielstand wird zusätzlich automatisch als Sicherheitskopie gespeichert.</div>
 </div>
 
 <div class="card compactcard">
@@ -173,15 +174,37 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 const DEFAULT={mode:'foerder',sections:6,duration:12,numFields:2,playersPerField:7,round:0,fields:[{own:0,opp:0},{own:0,opp:0}],history:[],opponent:'',matchDate:new Date().toISOString().slice(0,10),editing:null,roster:[],goalkeepers:['',''],lineups:[Array(11).fill(''),Array(11).fill('')],goals:[]};
 let state=JSON.parse(JSON.stringify(DEFAULT));let pendingGoal=null;
 function clone(x){return JSON.parse(JSON.stringify(x))}
-function save(){localStorage.setItem('u13live_v7',JSON.stringify(state))}
-function load(){try{const x=JSON.parse(localStorage.getItem('u13live_v7'));if(x)state=Object.assign(clone(DEFAULT),x)}catch(e){} normalizeState()}
+const LIVE_KEY='u13live_v7',SAFETY_KEY='u13live_v7_safety_713',EMERGENCY_KEY='u13live_v7_emergency_713';
+function validSavedState(x){return !!x&&Array.isArray(x.history)&&Array.isArray(x.fields)&&Number.isFinite(+x.round)}
+function readSaved(key){try{const x=JSON.parse(localStorage.getItem(key));return validSavedState(x)?x:null}catch(e){return null}}
+function sameMatch(a,b){return !!a&&!!b&&(a.matchDate||'')===(b.matchDate||'')&&(a.opponent||'')===(b.opponent||'')&&(a.mode||'')===(b.mode||'')}
+function save(){
+ try{
+  const previous=readSaved(LIVE_KEY);
+  // Falls ein Zustand plötzlich weniger abgeschlossene Abschnitte enthält, bleibt der bessere Stand separat erhalten.
+  if(previous&&previous.history.length>state.history.length)localStorage.setItem(SAFETY_KEY,JSON.stringify(previous));
+  localStorage.setItem(LIVE_KEY,JSON.stringify(state));
+  const safe=readSaved(SAFETY_KEY);
+  if(state.history.length>0&&(!safe||!sameMatch(safe,state)||state.history.length>=safe.history.length))localStorage.setItem(SAFETY_KEY,JSON.stringify(state));
+ }catch(e){}
+}
+function load(){
+ let current=readSaved(LIVE_KEY),safe=readSaved(SAFETY_KEY);
+ if(current)state=Object.assign(clone(DEFAULT),current);
+ normalizeState();
+ repairConsistency('Startprüfung');
+ // Unerwarteter Rückfall auf Abschnitt 1: nicht stillschweigend akzeptieren.
+ if(safe&&safe.history.length>0&&state.history.length===0&&!state.intentionalResetAt){
+  if(confirm(`Es wurde eine Sicherheitskopie mit ${safe.history.length} abgeschlossenen Abschnitt${safe.history.length===1?'':'en'} gefunden. Wiederherstellen?`)){state=Object.assign(clone(DEFAULT),safe);normalizeState();localStorage.setItem(LIVE_KEY,JSON.stringify(state));}
+ }
+}
 function normalizeState(){
  if(!Array.isArray(state.roster))state.roster=[];if(!Array.isArray(state.goals))state.goals=[];if(!Array.isArray(state.history))state.history=[];if(!Array.isArray(state.goalkeepers))state.goalkeepers=['',''];while(state.goalkeepers.length<2)state.goalkeepers.push('');state.goalkeepers=state.goalkeepers.slice(0,2);
  if(!Array.isArray(state.lineups))state.lineups=[Array(11).fill(''),Array(11).fill('')];while(state.lineups.length<2)state.lineups.push(Array(11).fill(''));state.lineups=state.lineups.map(a=>Array.from({length:11},(_,i)=>a?.[i]||''));
  if(state.mode!=='normal')state.mode='foerder';if(state.mode==='foerder'){state.sections=6;state.duration=Math.min(90,Math.max(1,+state.duration||12));state.numFields=2;state.playersPerField=7}else{state.sections=Math.min(12,Math.max(1,+state.sections||2));state.duration=Math.min(90,Math.max(1,+state.duration||12));state.numFields=state.numFields===2?2:1;state.playersPerField=[5,6,7,9,11].includes(+state.playersPerField)?+state.playersPerField:7}
  state.round=Math.min(state.history.length,state.sections);if(!state.fields?.length)state.fields=[{own:0,opp:0},{own:0,opp:0}];while(state.fields.length<2)state.fields.push({own:0,opp:0});if(state.editing===undefined)state.editing=null;
 }
-function setMode(mode){clearQuickSwap();if(state.history.length&&!confirm('Der Spielmodus kann nach bereits erfassten Abschnitten nur geändert werden, wenn die bisherigen Abschnitte gelöscht werden. Fortfahren?'))return;if(state.history.length){state.history=[];state.round=0;state.goals=[]}
+function setMode(mode){clearQuickSwap();if(state.history.length){alert('Der Spielmodus ist nach Spielbeginn gesperrt. So können bereits erfasste Abschnitte nicht versehentlich gelöscht werden.');return}
  state.mode=mode;if(mode==='foerder'){state.sections=6;state.duration=12;state.numFields=2;state.playersPerField=7}else{state.sections=2;state.duration=25;state.numFields=1;state.playersPerField=7}state.fields=[{own:0,opp:0},{own:0,opp:0}];state.editing=null;update()}
 function sectionStart(i){return i*state.duration}function sectionEnd(i){return (i+1)*state.duration}
 function outcome(f){return f.own>f.opp?'Sieg':f.own<f.opp?'Niederlage':'Unentschieden'}
@@ -189,6 +212,32 @@ function activeFieldCount(){return state.mode==='foerder'?2:state.numFields}
 function requiredPlayersPerField(){return state.mode==='foerder'?7:state.playersPerField}
 function scoreTotals(){return state.history.reduce((a,x)=>{a.own+=(x.fieldScores||[]).slice(0,activeFieldCount()).reduce((s,f)=>s+(+f.own||0),0);a.opp+=(x.fieldScores||[]).slice(0,activeFieldCount()).reduce((s,f)=>s+(+f.opp||0),0);return a},{own:0,opp:0})}
 function allOutcomes(){return state.history.flatMap(x=>(x.fieldScores||[]).slice(0,activeFieldCount()).map(outcome))}
+function liveScoreData(){
+ // Abgeschlossene Abschnitte + aktuell sichtbarer Abschnitt. Beim Bearbeiten ersetzt der sichtbare Stand den alten Datensatz.
+ let records=state.history.map(x=>clone(x));
+ if(state.editing!==null&&records[state.editing])records[state.editing]={...records[state.editing],fieldScores:clone(state.fields.slice(0,activeFieldCount()))};
+ else if(state.round<state.sections)records.push({fieldScores:clone(state.fields.slice(0,activeFieldCount()))});
+ const scores=records.flatMap(x=>(x.fieldScores||[]).slice(0,activeFieldCount()));
+ const outs=scores.map(outcome),w=outs.filter(x=>x==='Sieg').length,d=outs.filter(x=>x==='Unentschieden').length,l=outs.filter(x=>x==='Niederlage').length;
+ const goals=scores.reduce((a,f)=>({own:a.own+(+f.own||0),opp:a.opp+(+f.opp||0)}),{own:0,opp:0});
+ return {w,d,l,own:goals.own,opp:goals.opp};
+}
+function securedScoreData(){const os=allOutcomes();return {w:os.filter(x=>x==='Sieg').length,d:os.filter(x=>x==='Unentschieden').length,l:os.filter(x=>x==='Niederlage').length,...scoreTotals()}}
+function verifyProgress(expectedHistory,expectedRound){
+ const disk=readSaved(LIVE_KEY);
+ return !!disk&&disk.history.length===expectedHistory&&+disk.round===expectedRound&&expectedRound===expectedHistory;
+}
+function repairConsistency(context){
+ normalizeState();
+ const expected=Math.min(state.history.length,state.sections);
+ if(state.round!==expected)state.round=expected;
+ const disk=readSaved(LIVE_KEY);
+ if(disk&&disk.history.length>state.history.length&&sameMatch(disk,state)){state=Object.assign(clone(DEFAULT),disk);normalizeState();}
+ const safe=readSaved(SAFETY_KEY);
+ if(safe&&safe.history.length>state.history.length&&sameMatch(safe,state)){
+   if(confirm(`⚠️ ${context}: Im aktuellen Stand fehlen Abschnitte.\nSicherung mit ${safe.history.length}/${safe.sections||6} Abschnitten wiederherstellen?`)){state=Object.assign(clone(DEFAULT),safe);normalizeState();}
+ }
+}
 function previousBenchSet(){
  const idx=state.editing!==null?state.editing-1:state.round-1;
  if(idx<0||!state.history[idx])return new Set();
@@ -312,16 +361,32 @@ function toggleMatchInfo(){matchInfoOpen=!matchInfoOpen;updateMatchInfo()}
 function update(){normalizeState();updateMatchInfo();document.getElementById('modeFoerder').classList.toggle('active',state.mode==='foerder');document.getElementById('modeNormal').classList.toggle('active',state.mode==='normal');document.getElementById('foerderSettings').classList.toggle('hidden',state.mode!=='foerder');document.getElementById('normalSettings').classList.toggle('hidden',state.mode!=='normal');
  const ss=document.getElementById('sectionsSelect');ss.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${(i+1)===state.sections?'selected':''}>${i+1}</option>`).join('');document.getElementById('durationInput').value=state.duration;document.getElementById('foerderDurationInput').value=state.duration;document.getElementById('fieldsSelect').value=String(state.numFields);document.getElementById('playersPerFieldSelect').value=String(state.playersPerField);
  document.getElementById('headerSub').textContent=state.mode==='foerder'?`Förderliga · 6 × ${state.duration} Minuten · 2 Felder`:`Normales Spiel · ${state.sections} × ${state.duration} Minuten · ${state.numFields} Feld${state.numFields===1?'':'er'} · ${state.playersPerField-1}+1`;
- document.getElementById('overallLabel').textContent=state.mode==='foerder'?'Aktuelles Förderliga-Ergebnis':'Aktuelles Torergebnis';const totals=scoreTotals();if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,d=os.filter(x=>x==='Unentschieden').length,l=os.filter(x=>x==='Niederlage').length;document.getElementById('overall').textContent=`${w} : ${l}`;document.getElementById('counts').textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`}else{document.getElementById('overall').textContent=`${totals.own} : ${totals.opp}`;document.getElementById('counts').textContent=`Tore aus ${state.history.length} von ${state.sections} Abschnitten`}
+ document.getElementById('overallLabel').textContent=state.mode==='foerder'?'LIVE Förderliga-Ergebnis':'LIVE Torergebnis';const totals=scoreTotals(),live=liveScoreData(),secured=securedScoreData();if(state.mode==='foerder'){document.getElementById('overall').textContent=`${live.w} : ${live.l}`;document.getElementById('counts').textContent=`LIVE · ${live.w} Siege · ${live.d} Unentschieden · ${live.l} Niederlagen`;document.getElementById('securedScore').textContent=`Gesichert nach ${state.history.length} Abschnitt${state.history.length===1?'':'en'}: ${secured.w}:${secured.l}`}else{document.getElementById('overall').textContent=`${live.own} : ${live.opp}`;document.getElementById('counts').textContent=`LIVE · aktueller Torstand`;document.getElementById('securedScore').textContent=`Gesichert nach ${state.history.length} Abschnitt${state.history.length===1?'':'en'}: ${totals.own}:${totals.opp}`}
  document.getElementById('bar').style.width=`${Math.min(100,state.history.length/state.sections*100)}%`;document.getElementById('round').textContent=state.round<state.sections?`Abschnitt ${state.round+1} von ${state.sections}`:'Spiel beendet';document.getElementById('opponent').value=state.opponent||'';document.getElementById('matchDate').value=state.matchDate||'';document.getElementById('rosterInput').value=state.roster.join('\n');document.getElementById('rosterInput').value=state.roster.join('\n');document.getElementById('rosterInfo').textContent=state.roster.length?`${state.roster.length} Spieler im Kader · ${Math.max(0,state.roster.length-activeFieldCount()*requiredPlayersPerField())} Wechselspieler bei vollständiger Aufstellung`:'';document.getElementById('rosterSummary').textContent=state.roster.length?`${state.roster.length} Spieler · tippen zum Bearbeiten`:'Noch kein Kader · tippen zum Öffnen';
  const current=state.editing!==null?state.editing:state.round;document.getElementById('sectionTitle').textContent=current<state.sections?`${state.editing!==null?'Abschnitt '+(current+1)+' bearbeiten':'Abschnitt '+(current+1)} · ${sectionStart(current)}–${sectionEnd(current)} Minuten`:`Spiel beendet · ${state.sections*state.duration} Minuten`;const notice=document.getElementById('lineupNotice');notice.classList.add('hidden');if(state.round>0&&state.editing===null&&state.round<state.sections){notice.textContent='Die Aufstellung des vorherigen Abschnitts wurde übernommen. Ändere nur die Spieler, die du wechseln möchtest.';notice.classList.remove('hidden')}
  renderGoalkeeperSelectors();renderLineups();const historySummaryEl=document.getElementById('historySummary');if(historySummaryEl){historySummaryEl.textContent=state.history.length?`${state.history.length}/${state.sections} abgeschlossen · tippen zum Öffnen`:'Noch keine Abschnitte';}const statsSummaryEl=document.getElementById('statsSummary');if(statsSummaryEl){const stats=playerStats();const used=stats.filter(s=>s.minutes>0);const total=used.reduce((a,s)=>a+s.minutes,0);statsSummaryEl.textContent=used.length?`${used.length} Spieler eingesetzt · ${total} Gesamtminuten`:'Noch keine Einsätze';}applyFolds();renderScoreFields();const finish=document.getElementById('finishBtn');finish.disabled=state.round>=state.sections&&state.editing===null;finish.textContent=state.editing!==null?'✓ Änderung speichern':state.round>=state.sections?'✓ Spiel beendet':`Abschnitt ${state.round+1} abschließen`;renderHistory();renderStats();renderFinal();renderArchives();save()}
-function finishRound(){const err=validateLineup();if(err&&!confirm(err+'\n\nAbschnitt trotzdem ohne vollständige Aufstellung speichern?'))return;const idx=state.editing!==null?state.editing:state.round;if(idx>=state.sections)return;const rec={fieldScores:clone(state.fields.slice(0,activeFieldCount())),lineups:clone(state.lineups.map(a=>(a||[]).slice(0,requiredPlayersPerField()))),duration:state.duration,start:sectionStart(idx),end:sectionEnd(idx)};
- if(state.editing!==null){state.history[idx]=rec;state.editing=null}else{state.history.push(rec);state.round++;}
- state.fields=[{own:0,opp:0},{own:0,opp:0}];if(state.round<state.sections&&state.history.length)state.lineups=clone(state.history[state.history.length-1].lineups);update()}
+function finishRound(){const err=validateLineup();if(err&&!confirm(err+'\n\nAbschnitt trotzdem ohne vollständige Aufstellung speichern?'))return;const idx=state.editing!==null?state.editing:state.round;if(idx>=state.sections)return;
+ const before=clone(state),beforeHistory=state.history.length,beforeRound=state.round;
+ // Sicherheitskopie VOR jeder Änderung.
+ localStorage.setItem(SAFETY_KEY,JSON.stringify(before));
+ const rec={fieldScores:clone(state.fields.slice(0,activeFieldCount())),lineups:clone(state.lineups.map(a=>(a||[]).slice(0,requiredPlayersPerField()))),duration:state.duration,start:sectionStart(idx),end:sectionEnd(idx)};
+ if(state.editing!==null){state.history[idx]=rec;state.editing=null}else{state.history.push(rec);state.round=beforeRound+1;delete state.intentionalResetAt;}
+ // Strenger Check: exakt +1 beim normalen Abschluss, niemals Sprung oder Reset.
+ const expectedHistory=beforeHistory+(before.editing===null?1:0),expectedRound=before.editing===null?beforeRound+1:beforeRound;
+ if(state.history.length!==expectedHistory||state.round!==expectedRound||state.round!==state.history.length){state=before;localStorage.setItem(LIVE_KEY,JSON.stringify(state));alert('⚠️ Abschnitt konnte wegen einer inkonsistenten Zählung nicht abgeschlossen werden. Der vorherige sichere Stand wurde wiederhergestellt.');update();return}
+ // Zuerst den vollständigen neuen Stand schreiben und zurücklesen. Erst DANACH Eingabefelder auf 0:0 setzen.
+ localStorage.setItem(LIVE_KEY,JSON.stringify(state));
+ if(!verifyProgress(expectedHistory,expectedRound)){state=before;localStorage.setItem(LIVE_KEY,JSON.stringify(state));alert('⚠️ Speicherprüfung fehlgeschlagen. Der vorherige sichere Stand wurde wiederhergestellt; es gingen keine abgeschlossenen Abschnitte verloren.');update();return}
+ // Erfolgreich verifiziert: neuer Stand wird Sicherheitskopie, dann nächster Abschnitt vorbereitet.
+ localStorage.setItem(SAFETY_KEY,JSON.stringify(state));
+ state.fields=[{own:0,opp:0},{own:0,opp:0}];if(state.round<state.sections&&state.history.length)state.lineups=clone(state.history[state.history.length-1].lineups);
+ localStorage.setItem(LIVE_KEY,JSON.stringify(state));
+ // Zweiter Check nach Vorbereitung des Folgeabschnitts (z.B. 5 -> zwingend Abschnitt 6).
+ if(!verifyProgress(expectedHistory,expectedRound)){const safe=readSaved(SAFETY_KEY);state=safe?Object.assign(clone(DEFAULT),safe):before;normalizeState();localStorage.setItem(LIVE_KEY,JSON.stringify(state));alert('⚠️ Der nächste Abschnitt konnte nicht sicher vorbereitet werden. Der zuletzt gesicherte Stand wurde wiederhergestellt.');}
+ update()}
 function resetRound(){state.fields=[{own:0,opp:0},{own:0,opp:0}];const sec=state.editing!==null?state.editing:state.round;state.goals=state.goals.filter(g=>g.section!==sec);update()}
 function editRound(i){clearQuickSwap();uiFold.history=true;if(i<0||i>=state.history.length)return;state.editing=i;const x=state.history[i];state.fields=[{own:0,opp:0},{own:0,opp:0}];(x.fieldScores||[]).forEach((f,j)=>state.fields[j]=clone(f));state.lineups=clone(x.lineups||[Array(11).fill(''),Array(11).fill('')]);update();window.scrollTo({top:document.getElementById('lineupCard').offsetTop-10,behavior:'smooth'})}
-function undoLast(){if(!state.history.length)return;const i=state.history.length-1;state.history.splice(i,1);state.goals=state.goals.filter(g=>g.section!==i);state.round=state.history.length;state.editing=null;state.fields=[{own:0,opp:0},{own:0,opp:0}];state.lineups=state.history.length?clone(state.history[state.history.length-1].lineups):[Array(11).fill(''),Array(11).fill('')];update()}
+function undoLast(){if(!state.history.length)return;const i=state.history.length-1,last=clone(state.history[i]);if(!confirm(`Abschnitt ${i+1} wieder zum Bearbeiten öffnen?`))return;localStorage.setItem(SAFETY_KEY,JSON.stringify(state));state.history.splice(i,1);state.round=state.history.length;state.editing=null;state.fields=[{own:0,opp:0},{own:0,opp:0}];(last.fieldScores||[]).forEach((f,j)=>state.fields[j]=clone(f));state.lineups=clone(last.lineups||[Array(11).fill(''),Array(11).fill('')]);update()}
 function renderHistory(){const tb=document.getElementById('history');tb.innerHTML='';document.getElementById('field2Head').style.display=activeFieldCount()===2?'':'none';state.history.forEach((x,i)=>{const scores=x.fieldScores||[];let val;if(state.mode==='foerder')val=scores.map(outcome).join(' / ');else{const a=scores.reduce((z,f)=>({own:z.own+f.own,opp:z.opp+f.opp}),{own:0,opp:0});val=`${a.own}:${a.opp}`};const tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}<br><button class="editbtn" onclick="editRound(${i})">✎ Ändern</button></td><td>${scores[0]?scores[0].own+':'+scores[0].opp:'–'}</td><td style="${activeFieldCount()===2?'':'display:none'}">${scores[1]?scores[1].own+':'+scores[1].opp:'–'}</td><td>${val}</td><td><button class="editbtn" onclick="showLineup(${i})">👥 Anzeigen</button></td>`;tb.appendChild(tr)})}
 function showLineup(i){const x=state.history[i],body=document.getElementById('lineupDialogBody');document.getElementById('lineupDialogTitle').textContent=`Aufstellung Abschnitt ${i+1}`;let h='';for(let f=0;f<activeFieldCount();f++){const a=x.lineups?.[f]||[];h+=`<p><b>Feld ${f+1}</b><br>🥅 TS: ${esc(a[0]||'–')}<br>⚽ ${a.slice(1).map(esc).join(' · ')||'–'}</p>`}body.innerHTML=h;document.getElementById('lineupDialog').showModal()}
 function playerStats(){const m=new Map(state.roster.map(p=>[p,{name:p,sections:0,minutes:0,f1:0,f2:0,gk:0,goals:0}]));state.history.forEach((x,si)=>{const seen=new Set();(x.lineups||[]).slice(0,activeFieldCount()).forEach((a,f)=>a.forEach((p,i)=>{if(!p)return;if(!m.has(p))m.set(p,{name:p,sections:0,minutes:0,f1:0,f2:0,gk:0,goals:0});const s=m.get(p);if(!seen.has(p)){s.sections++;s.minutes+=(x.duration||state.duration);seen.add(p)}if(f===0)s.f1++;else s.f2++;if(i===0)s.gk++}))});state.goals.forEach(g=>{if(g.scorer){if(!m.has(g.scorer))m.set(g.scorer,{name:g.scorer,sections:0,minutes:0,f1:0,f2:0,gk:0,goals:0});m.get(g.scorer).goals++}});return [...m.values()]}
@@ -337,7 +402,8 @@ function renderStats(){
 }
 function renderFinal(){const done=state.history.length>=state.sections;document.getElementById('finalCard').style.display=done?'block':'none';if(!done)return;const totals=scoreTotals();if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,d=os.filter(x=>x==='Unentschieden').length,l=os.filter(x=>x==='Niederlage').length;document.getElementById('finalScore').textContent=`${w} : ${l}`;document.getElementById('finalCounts').textContent=`${w} Siege · ${d} Unentschieden · ${l} Niederlagen`;document.getElementById('actualTotal').textContent=`Tatsächliche Tore insgesamt: ${totals.own} : ${totals.opp}`}else{document.getElementById('finalScore').textContent=`${totals.own} : ${totals.opp}`;document.getElementById('finalCounts').textContent='Endergebnis nach Toren';document.getElementById('actualTotal').textContent=`${state.sections} Abschnitte · ${state.sections*state.duration} Minuten`}}
 function shareResult(){const totals=scoreTotals();let t;if(state.mode==='foerder'){const os=allOutcomes(),w=os.filter(x=>x==='Sieg').length,l=os.filter(x=>x==='Niederlage').length,d=os.filter(x=>x==='Unentschieden').length;t=`Förderliga${state.opponent?' vs. '+state.opponent:''}: ${w}:${l} (${w} Siege, ${d} Remis, ${l} Niederlagen)`}else t=`Spiel${state.opponent?' vs. '+state.opponent:''}: ${totals.own}:${totals.opp}`;if(navigator.share)navigator.share({title:'FCG Match Live',text:t});else navigator.clipboard?.writeText(t).then(()=>alert('Ergebnis kopiert.'))}
-function newMatch(){clearQuickSwap();matchInfoOpen=true;if(confirm('Neues Spiel beginnen? Das aktuelle Spiel wird zurückgesetzt. Vorher bei Bedarf archivieren oder exportieren.')){state=clone(DEFAULT);update()}}
+function restoreSafetyBackup(){const safe=readSaved(SAFETY_KEY)||readSaved(EMERGENCY_KEY);if(!safe||!safe.history.length){alert('Es ist keine Sicherung mit abgeschlossenen Abschnitten vorhanden.');return}if(!confirm(`Sicherung wiederherstellen?\n${safe.history.length}/${safe.sections||6} Abschnitte · ${safe.opponent||'ohne Gegner'}`))return;localStorage.setItem(EMERGENCY_KEY,JSON.stringify(state));state=Object.assign(clone(DEFAULT),clone(safe));normalizeState();matchInfoOpen=!(state.opponent&&state.matchDate);update()}
+function newMatch(){clearQuickSwap();matchInfoOpen=true;const progress=state.history.length;if(progress>0)localStorage.setItem(EMERGENCY_KEY,JSON.stringify(state));const answer=prompt(`Neues Spiel beginnen?\n\nDer aktuelle Stand (${progress}/${state.sections} Abschnitte) wird als Notfall-Sicherung behalten.\nZum Bestätigen bitte NEU eingeben:`);if(answer!=='NEU'){if(answer!==null)alert('Neues Spiel wurde nicht gestartet.');return}state=clone(DEFAULT);state.intentionalResetAt=Date.now();localStorage.setItem(LIVE_KEY,JSON.stringify(state));update()}
 function csvEscape(v){const s=String(v??'');return '"'+s.replace(/"/g,'""')+'"'}
 function buildCSV(data){const lines=[];const sep=';';lines.push(['Spiel','Wert'].map(csvEscape).join(sep));lines.push(['Modus',data.mode==='foerder'?'Förderliga':'Normales Spiel'].map(csvEscape).join(sep));lines.push(['Gegner',data.opponent||''].map(csvEscape).join(sep));lines.push(['Datum',data.matchDate||''].map(csvEscape).join(sep));lines.push(['Abschnitte',data.sections].map(csvEscape).join(sep));lines.push(['Minuten je Abschnitt',data.duration].map(csvEscape).join(sep));if(data.mode==='normal')lines.push(['Startformation',`${(data.playersPerField||7)-1}+1`].map(csvEscape).join(sep));lines.push([]);lines.push(['Abschnitt','Feld','Eigene Tore','Gegentore','Wertung','Torspieler','Feldspieler'].map(csvEscape).join(sep));(data.history||[]).forEach((x,i)=>(x.fieldScores||[]).slice(0,data.mode==='foerder'?2:data.numFields).forEach((f,fi)=>{const a=x.lineups?.[fi]||[];lines.push([i+1,fi+1,f.own,f.opp,outcome(f),a[0]||'',a.slice(1).join(', ')].map(csvEscape).join(sep))}));lines.push([]);lines.push(['Torschützen'].map(csvEscape).join(sep));lines.push(['Abschnitt','Feld','Tor','Spieler'].map(csvEscape).join(sep));(data.goals||[]).forEach(g=>lines.push([g.section+1,g.field+1,g.goalNo,g.scorer||''].map(csvEscape).join(sep)));lines.push([]);lines.push(['Spieler','Abschnitte','Spielminuten','Feld 1','Feld 2','Als TS','Tore'].map(csvEscape).join(sep));playerStatsFor(data).forEach(s=>lines.push([s.name,s.sections,s.minutes,s.f1,s.f2,s.gk,s.goals].map(csvEscape).join(sep)));return '\ufeff'+lines.join('\r\n')}
 function playerStatsFor(data){const old=state;state=data;const r=playerStats();state=old;return r}

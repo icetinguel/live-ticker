@@ -20,7 +20,7 @@
   ],
   "name": "FCG Match Live",
   "short_name": "FCG Match",
-  "description": "FCG Match Live",
+  "description": "FCG Match Live v7.13",
   "start_url": "./",
   "scope": "./"
 }
