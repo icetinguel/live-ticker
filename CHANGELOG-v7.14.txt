@@ -1,0 +1,11 @@
+FCG Match Live v7.14
+
+Neu: iPad-/Tablet-Optimierung
+- Querformat auf iPad freigegeben (keine Portrait-Sperre mehr)
+- Breitere Tablet-Darstellung bis 1180 px
+- Größere Bedienelemente, Schriften und Tabellen auf iPad
+- Im iPad-Querformat: Aufstellung links, Live-Ergebnis rechts gleichzeitig sichtbar
+- Live-Ergebnis bleibt im Querformat beim Scrollen sichtbar
+- Feld 1 und Feld 2 bleiben auf Tablets nebeneinander
+- iPhone-Darstellung und bestehende 7.13-Funktionen bleiben unverändert
+- PWA-Cache auf v7.14 erhöht

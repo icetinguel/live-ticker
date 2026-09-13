@@ -69,10 +69,60 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .swap-row.stat-min.is-selected,.swap-row.stat-max.is-selected{outline:3px solid var(--green);outline-offset:1px}
 
 .lineup-stat-legend{margin:4px 0 8px}
+
+
+/* iPad / Tablet-Optimierung v7.14 */
+@media (min-width:768px){
+  header{padding-left:24px;padding-right:24px}
+  header h1{font-size:25px}
+  header .sub{font-size:14px}
+  main{max-width:1180px;padding:16px 20px 112px}
+  .card{padding:18px;margin:12px 0;border-radius:20px}
+  .section{font-size:18px}
+  .score{font-size:66px}
+  .status{font-size:16px}
+  .small{font-size:13px}
+  button{min-height:50px;font-size:16px}
+  .plus,.minus,.scorebtn{width:58px;min-width:58px;min-height:56px;font-size:22px}
+  .actual{font-size:32px}
+  .field,.fieldfold{padding:14px}
+  .field h3{font-size:19px}
+  .grid{gap:14px}
+  .formgrid{gap:14px}
+  .slot{grid-template-columns:72px 1fr;gap:10px}
+  .slot span{font-size:13px}
+  select,input,textarea{font-size:17px}
+  table{font-size:13px}
+  th{font-size:11px}
+  th,td{padding:9px 6px}
+  .bottom{padding-left:20px;padding-right:20px;gap:12px}
+  .bottom button{max-width:260px;min-height:54px;font-size:14px}
+  dialog{width:min(80vw,620px)}
+}
+
+/* iPad Querformat: Aufstellung und Live-Ergebnis gleichzeitig sichtbar */
+@media (min-width:1024px) and (orientation:landscape){
+  .ipad-live-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.85fr);gap:14px;align-items:start}
+  .ipad-live-layout > .card{margin:0;min-width:0}
+  #liveScoreCard{position:sticky;top:92px}
+  #liveScoreCard .grid{grid-template-columns:1fr 1fr}
+  #liveScoreCard .row{gap:9px}
+  #lineupCard .grid{grid-template-columns:1fr 1fr}
+  #lineupCard .fieldfold{min-height:100%}
+  .lineup-actions{grid-template-columns:1fr 1fr}
+}
+
+/* Kleinere iPads im Hochformat: zwei Felder bleiben nebeneinander, Bedienelemente werden größer */
+@media (min-width:768px) and (max-width:1023px){
+  .grid{grid-template-columns:1fr 1fr}
+  .controls{grid-template-columns:1fr 1fr}
+  .lineup-actions{grid-template-columns:1fr 1fr}
+}
+
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.13</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.14</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
 <div class="card">
  <div class="section">Spielmodus</div>
@@ -119,6 +169,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  </div>
 </div>
 
+<div class="ipad-live-layout">
 <div class="card current-focus" id="lineupCard">
  <div class="section" id="sectionTitle">Abschnitt 1</div>
  <div id="lineupNotice" class="notice hidden"></div>
@@ -134,6 +185,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
  <div class="section">Live-Ergebnis</div>
  <div class="grid" id="scoreGrid"></div>
  <div class="controls" style="margin-top:12px"><button id="finishBtn" class="secondary" onclick="finishRound()">Abschnitt 1 abschließen</button><button class="secondary" onclick="resetRound()">↺ Abschnitt zurücksetzen</button></div>
+</div>
 </div>
 
 <div class="card compactcard">
