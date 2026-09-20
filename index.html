@@ -71,7 +71,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .lineup-stat-legend{margin:4px 0 8px}
 
 
-/* iPad / Tablet-Optimierung v7.19 */
+/* iPad / Tablet-Optimierung v7.20 */
 @media (min-width:768px){
   header{padding-left:24px;padding-right:24px}
   header h1{font-size:25px}
@@ -120,7 +120,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 }
 
 
-/* v7.19 persistent roster */
+/* v7.20 persistent roster */
 .roster715-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}
 .roster715-player{display:flex;align-items:center;gap:7px;border:1px solid #dce3df;border-radius:12px;padding:9px;background:#fff;font-weight:800}
 .roster715-player.off{opacity:.42;text-decoration:line-through;background:#eef1ef}
@@ -129,12 +129,12 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 .roster715-actions{display:flex;gap:7px;margin-top:8px}.roster715-actions button{flex:1}
 @media(min-width:768px){.roster715-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
-/* v7.19 */
+/* v7.20 */
 .roster716-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:transparent!important;color:inherit!important;padding:0!important;min-height:auto!important}
 .roster716-body.collapsed{display:none}
 .field-ts716{font-size:11px;color:#68736d;text-align:center;font-weight:800;margin-top:-2px;margin-bottom:4px}
 
-/* v7.19 */
+/* v7.20 */
 .timer719{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0 10px}
 .timer719-time{font-size:22px;font-weight:900;min-width:64px;text-align:center}
 .timer719 button{padding:8px 12px;min-height:40px}
@@ -144,7 +144,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 </style>
 </head>
 <body>
-<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.19</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
+<header><h1>⚽ FCG Match Live <span style="font-size:11px;opacity:.8">v7.20</span></h1><div class="sub" id="matchHeader">Gegner & Datum eingeben</div><div class="sub" id="headerSub">Förderliga · 6 × 12 Minuten · 2 Felder</div></header>
 <main>
 <div class="card">
  <div class="section">Spielmodus</div>
@@ -250,7 +250,7 @@ dialog{border:0;border-radius:18px;padding:16px;width:min(92vw,420px);box-shadow
 <dialog id="lineupDialog"><div class="section" id="lineupDialogTitle">Aufstellung</div><div id="lineupDialogBody" class="small"></div><button class="secondary" style="width:100%;margin-top:12px" onclick="document.getElementById('lineupDialog').close()">Schließen</button></dialog>
 
 <script>
-const DEFAULT={mode:'foerder',sections:6,duration:12,numFields:2,playersPerField:7,round:0,fields:[{own:0,opp:0},{own:0,opp:0}],history:[],opponent:'',matchDate:new Date().toISOString().slice(0,10),editing:null,roster:[],goalkeepers:['',''],lineups:[Array(11).fill(''),Array(11).fill('')],goals:[],liveExchanges:[],sectionTimer:{running:false,startedAt:null,elapsed:0}};
+const DEFAULT={mode:'foerder',sections:6,duration:12,numFields:2,playersPerField:7,round:0,fields:[{own:0,opp:0},{own:0,opp:0}],history:[],opponent:'',matchDate:new Date().toISOString().slice(0,10),editing:null,roster:[],goalkeepers:['',''],lineups:[Array(11).fill(''),Array(11).fill('')],goals:[],liveExchanges:[],sectionTimer:{running:false,startedAt:null,elapsed:0},sectionStartLineups:null};
 let state=JSON.parse(JSON.stringify(DEFAULT));let pendingGoal=null;
 function clone(x){return JSON.parse(JSON.stringify(x))}
 const LIVE_KEY='u13live_v7',SAFETY_KEY='u13live_v7_safety_713',EMERGENCY_KEY='u13live_v7_emergency_713';
@@ -281,7 +281,7 @@ function normalizeState(){
  if(!Array.isArray(state.roster))state.roster=[];if(!Array.isArray(state.goals))state.goals=[];if(!Array.isArray(state.history))state.history=[];if(!Array.isArray(state.goalkeepers))state.goalkeepers=['',''];while(state.goalkeepers.length<2)state.goalkeepers.push('');state.goalkeepers=state.goalkeepers.slice(0,2);
  if(!Array.isArray(state.lineups))state.lineups=[Array(11).fill(''),Array(11).fill('')];while(state.lineups.length<2)state.lineups.push(Array(11).fill(''));state.lineups=state.lineups.map(a=>Array.from({length:11},(_,i)=>a?.[i]||''));
  if(state.mode!=='normal')state.mode='foerder';if(state.mode==='foerder'){state.sections=6;state.duration=Math.min(90,Math.max(1,+state.duration||12));state.numFields=2;state.playersPerField=7}else{state.sections=Math.min(12,Math.max(1,+state.sections||2));state.duration=Math.min(90,Math.max(1,+state.duration||12));state.numFields=state.numFields===2?2:1;state.playersPerField=[5,6,7,9,11].includes(+state.playersPerField)?+state.playersPerField:7}
- state.round=Math.min(state.history.length,state.sections);if(!state.fields?.length)state.fields=[{own:0,opp:0},{own:0,opp:0}];while(state.fields.length<2)state.fields.push({own:0,opp:0});if(state.editing===undefined)state.editing=null;if(!Array.isArray(state.liveExchanges))state.liveExchanges=[];if(!state.sectionTimer||typeof state.sectionTimer!=='object')state.sectionTimer={running:false,startedAt:null,elapsed:0};
+ state.round=Math.min(state.history.length,state.sections);if(!state.fields?.length)state.fields=[{own:0,opp:0},{own:0,opp:0}];while(state.fields.length<2)state.fields.push({own:0,opp:0});if(state.editing===undefined)state.editing=null;if(!Array.isArray(state.liveExchanges))state.liveExchanges=[];if(!state.sectionTimer||typeof state.sectionTimer!=='object')state.sectionTimer={running:false,startedAt:null,elapsed:0};if(!state.sectionStartLineups)state.sectionStartLineups=null;
 }
 function setMode(mode){clearQuickSwap();if(state.history.length){alert('Der Spielmodus ist nach Spielbeginn gesperrt. So können bereits erfasste Abschnitte nicht versehentlich gelöscht werden.');return}
  state.mode=mode;if(mode==='foerder'){state.sections=6;state.duration=12;state.numFields=2;state.playersPerField=7}else{state.sections=2;state.duration=25;state.numFields=1;state.playersPerField=7}state.fields=[{own:0,opp:0},{own:0,opp:0}];state.editing=null;update()}
@@ -447,8 +447,8 @@ let timer719Interval=null;
 function timer719Elapsed(){const t=state.sectionTimer||{running:false,elapsed:0};return Math.max(0,(+t.elapsed||0)+(t.running&&t.startedAt?Date.now()-t.startedAt:0))}
 function timer719IsRunning(){return !!state.sectionTimer?.running}
 function timer719Render(){const el=document.getElementById('timer719'),btn=document.getElementById('timer719Btn');if(!el)return;const total=state.duration*60000,elapsed=Math.min(total,timer719Elapsed()),left=Math.max(0,total-elapsed);const sec=Math.ceil(left/1000),m=Math.floor(sec/60),ss=String(sec%60).padStart(2,'0');el.textContent=`${m}:${ss}`;if(btn)btn.textContent=timer719IsRunning()?'⏸ Pause':'▶ Start';if(left<=0&&state.sectionTimer.running){state.sectionTimer.elapsed=total;state.sectionTimer.running=false;state.sectionTimer.startedAt=null;save()}}
-function timer719Toggle(){if(state.editing!==null||state.round>=state.sections)return;const t=state.sectionTimer;if(t.running){t.elapsed=timer719Elapsed();t.running=false;t.startedAt=null}else{if((+t.elapsed||0)>=state.duration*60000)t.elapsed=0;t.running=true;t.startedAt=Date.now()}save();timer719Render()}
-function timer719Reset(){if(!confirm('Abschnittstimer auf Anfang zurücksetzen?'))return;state.sectionTimer={running:false,startedAt:null,elapsed:0};save();timer719Render()}
+function timer719Toggle(){if(state.editing!==null||state.round>=state.sections)return;const t=state.sectionTimer;if(t.running){t.elapsed=timer719Elapsed();t.running=false;t.startedAt=null}else{if((+t.elapsed||0)>=state.duration*60000)t.elapsed=0;if((+t.elapsed||0)===0&&!state.sectionStartLineups)state.sectionStartLineups=clone(state.lineups);t.running=true;t.startedAt=Date.now()}save();timer719Render()}
+function timer719Reset(){if(!confirm('Abschnittstimer auf Anfang zurücksetzen?'))return;state.sectionTimer={running:false,startedAt:null,elapsed:0};if(!state.liveExchanges.length)state.sectionStartLineups=null;save();timer719Render()}
 function timer719Stop(){if(state.sectionTimer?.running)state.sectionTimer.elapsed=timer719Elapsed();state.sectionTimer={running:false,startedAt:null,elapsed:0};}
 function recordLiveExchange719(field,outgoing,incoming){const elapsed=Math.min(state.duration*60000,timer719Elapsed());state.liveExchanges.push({section:state.round,field,outgoing,incoming,elapsedMs:elapsed,at:Date.now()})}
 if(timer719Interval)clearInterval(timer719Interval);timer719Interval=setInterval(timer719Render,500);
@@ -460,10 +460,10 @@ function update(){normalizeState();updateMatchInfo();document.getElementById('mo
  const current=state.editing!==null?state.editing:state.round;document.getElementById('sectionTitle').textContent=current<state.sections?`${state.editing!==null?'Abschnitt '+(current+1)+' bearbeiten':'Abschnitt '+(current+1)} · ${sectionStart(current)}–${sectionEnd(current)} Minuten`:`Spiel beendet · ${state.sections*state.duration} Minuten`;const notice=document.getElementById('lineupNotice');notice.classList.add('hidden');if(state.round>0&&state.editing===null&&state.round<state.sections){notice.textContent='Die Aufstellung des vorherigen Abschnitts wurde übernommen. Ändere nur die Spieler, die du wechseln möchtest.';notice.classList.remove('hidden')}
  renderGoalkeeperSelectors();renderLineups();timer719Render();const historySummaryEl=document.getElementById('historySummary');if(historySummaryEl){historySummaryEl.textContent=state.history.length?`${state.history.length}/${state.sections} abgeschlossen · tippen zum Öffnen`:'Noch keine Abschnitte';}const statsSummaryEl=document.getElementById('statsSummary');if(statsSummaryEl){const stats=playerStats();const used=stats.filter(s=>s.minutes>0);const total=used.reduce((a,s)=>a+s.minutes,0);statsSummaryEl.textContent=used.length?`${used.length} Spieler eingesetzt · ${total} Gesamtminuten`:'Noch keine Einsätze';}applyFolds();renderScoreFields();const finish=document.getElementById('finishBtn');finish.disabled=state.round>=state.sections&&state.editing===null;finish.textContent=state.editing!==null?'✓ Änderung speichern':state.round>=state.sections?'✓ Spiel beendet':`Abschnitt ${state.round+1} abschließen`;renderHistory();renderStats();renderFinal();renderArchives();save()}
 function finishRound(){const err=validateLineup();if(err&&!confirm(err+'\n\nAbschnitt trotzdem ohne vollständige Aufstellung speichern?'))return;const idx=state.editing!==null?state.editing:state.round;if(idx>=state.sections)return;
- const before=clone(state),beforeHistory=state.history.length,beforeRound=state.round;
+ const before=clone(state),finalLineup=clone(state.lineups),beforeHistory=state.history.length,beforeRound=state.round;
  // Sicherheitskopie VOR jeder Änderung.
  localStorage.setItem(SAFETY_KEY,JSON.stringify(before));
- const rec={fieldScores:clone(state.fields.slice(0,activeFieldCount())),lineups:clone(state.lineups.map(a=>(a||[]).slice(0,requiredPlayersPerField()))),duration:state.duration,start:sectionStart(idx),end:sectionEnd(idx),exchanges:clone(state.liveExchanges.filter(e=>e.section===idx))};
+ const rec={fieldScores:clone(state.fields.slice(0,activeFieldCount())),lineups:clone((state.sectionStartLineups||state.lineups).map(a=>(a||[]).slice(0,requiredPlayersPerField()))),duration:state.duration,start:sectionStart(idx),end:sectionEnd(idx),exchanges:clone(state.liveExchanges.filter(e=>e.section===idx))};
  if(state.editing!==null){state.history[idx]=rec;state.editing=null}else{state.history.push(rec);state.round=beforeRound+1;delete state.intentionalResetAt;}
  // Strenger Check: exakt +1 beim normalen Abschluss, niemals Sprung oder Reset.
  const expectedHistory=beforeHistory+(before.editing===null?1:0),expectedRound=before.editing===null?beforeRound+1:beforeRound;
@@ -473,7 +473,7 @@ function finishRound(){const err=validateLineup();if(err&&!confirm(err+'\n\nAbsc
  if(!verifyProgress(expectedHistory,expectedRound)){state=before;localStorage.setItem(LIVE_KEY,JSON.stringify(state));alert('⚠️ Speicherprüfung fehlgeschlagen. Der vorherige sichere Stand wurde wiederhergestellt; es gingen keine abgeschlossenen Abschnitte verloren.');update();return}
  // Erfolgreich verifiziert: neuer Stand wird Sicherheitskopie, dann nächster Abschnitt vorbereitet.
  localStorage.setItem(SAFETY_KEY,JSON.stringify(state));
- state.fields=[{own:0,opp:0},{own:0,opp:0}];state.liveExchanges=[];timer719Stop();if(state.round<state.sections&&state.history.length)state.lineups=clone(state.history[state.history.length-1].lineups);
+ state.fields=[{own:0,opp:0},{own:0,opp:0}];state.liveExchanges=[];timer719Stop();state.sectionStartLineups=null;if(state.round<state.sections&&state.history.length)state.lineups=finalLineup;
  localStorage.setItem(LIVE_KEY,JSON.stringify(state));
  // Zweiter Check nach Vorbereitung des Folgeabschnitts (z.B. 5 -> zwingend Abschnitt 6).
  if(!verifyProgress(expectedHistory,expectedRound)){const safe=readSaved(SAFETY_KEY);state=safe?Object.assign(clone(DEFAULT),safe):before;normalizeState();localStorage.setItem(LIVE_KEY,JSON.stringify(state));alert('⚠️ Der nächste Abschnitt konnte nicht sicher vorbereitet werden. Der zuletzt gesicherte Stand wurde wiederhergestellt.');}
@@ -486,26 +486,64 @@ function showLineup(i){const x=state.history[i],body=document.getElementById('li
 function playerStats(){
  const m=new Map(state.roster.map(p=>[p,{name:p,sections:0,minutes:0,f1:0,f2:0,gk:0,goals:0}]));
  const ensure=p=>{if(!m.has(p))m.set(p,{name:p,sections:0,minutes:0,f1:0,f2:0,gk:0,goals:0});return m.get(p)};
+
  state.history.forEach((x,si)=>{
-   const duration=+(x.duration||state.duration), exchanges=x.exchanges||[];
+   const duration=+(x.duration||state.duration);
+   const sectionMs=duration*60000;
+   const exchanges=(x.exchanges||[]).slice().sort((a,b)=>(+a.elapsedMs||0)-(+b.elapsedMs||0));
    const participants=new Set();
-   (x.lineups||[]).slice(0,activeFieldCount()).forEach((a,f)=>{
-     a.forEach((p,i)=>{if(!p)return;participants.add(p);const st=ensure(p);if(f===0)st.f1++;else st.f2++;if(i===0)st.gk++});
+
+   (x.lineups||[]).slice(0,activeFieldCount()).forEach((startLineup,f)=>{
+     // finishRound stores the starting lineup for the section; live exchanges describe later changes.
+     const slots=(startLineup||[]).slice(0,requiredPlayersPerField());
+     const current=slots.slice();
+     const enteredAt=current.map(()=>0);
+
+     current.forEach((p,i)=>{
+       if(!p)return;
+       participants.add(p);
+       const st=ensure(p);
+       if(f===0)st.f1++; else st.f2++;
+       if(i===0)st.gk++;
+     });
+
+     exchanges.filter(e=>e.field===f).forEach(e=>{
+       const at=Math.max(0,Math.min(sectionMs,+e.elapsedMs||0));
+       let slot=current.indexOf(e.outgoing);
+       if(slot<0) return; // inconsistent exchange: ignore rather than double count
+
+       const outgoing=current[slot];
+       if(outgoing){
+         ensure(outgoing).minutes += Math.max(0,at-enteredAt[slot])/60000;
+         participants.add(outgoing);
+       }
+       current[slot]=e.incoming||'';
+       enteredAt[slot]=at;
+       if(e.incoming){
+         participants.add(e.incoming);
+         const st=ensure(e.incoming);
+         if(f===0)st.f1++; else st.f2++;
+         if(slot===0)st.gk++;
+       }
+     });
+
+     current.forEach((p,slot)=>{
+       if(!p)return;
+       ensure(p).minutes += Math.max(0,sectionMs-enteredAt[slot])/60000;
+       participants.add(p);
+     });
    });
-   exchanges.forEach(e=>{if(e.incoming)participants.add(e.incoming);if(e.outgoing)participants.add(e.outgoing)});
+
    participants.forEach(p=>ensure(p).sections++);
-   // Default full-section minutes, then correct players affected by live exchanges.
-   const mins=new Map();
-   (x.lineups||[]).slice(0,activeFieldCount()).flat().filter(Boolean).forEach(p=>mins.set(p,duration));
-   exchanges.forEach(e=>{
-     const at=Math.max(0,Math.min(duration,(+e.elapsedMs||0)/60000));
-     mins.set(e.outgoing,Math.min(mins.has(e.outgoing)?mins.get(e.outgoing):duration,at));
-     mins.set(e.incoming,(mins.get(e.incoming)||0)+(duration-at));
-   });
-   mins.forEach((v,p)=>ensure(p).minutes+=v);
  });
+
  state.goals.forEach(g=>{if(g.scorer)ensure(g.scorer).goals++});
- return [...m.values()].map(x=>({...x,minutes:Math.round(x.minutes*10)/10}));
+
+ // Whole-minute display. Clamp impossible values defensively.
+ return [...m.values()].map(x=>{
+   const maxMinutes=x.sections*state.duration;
+   return {...x,minutes:Math.min(maxMinutes,Math.max(0,Math.round(x.minutes)))};
+ });
 }
 function renderStats(){
  const tb=document.getElementById('statsBody');tb.innerHTML='';const stats=playerStats();
